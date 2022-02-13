@@ -1,0 +1,19 @@
+/* python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. .\authentication.proto */
+
+syntax = "proto3";
+
+package authentication;
+
+service Authenticate {
+    rpc TryLogin (AuthenticateRequest) returns (AuthenticateReply) {}
+}
+
+message AuthenticateRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthenticateReply {
+    string status = 1;
+    int32 id = 2;
+}
