@@ -26,5 +26,10 @@ is beneficial due to its high performance.
 
 ## PostgreSQL Database
 - A PostgreSQL database according to **schema.sql** is utilised for the data persistence of the application.
-- The environment variables POSTGRES_DATABASE, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT should be set or provided in an **.env** file in the root directory of the project. See [https://12factor.net/config](https://12factor.net/config) and [https://pypi.org/project/python-dotenv/](https://pypi.org/project/python-dotenv/).  
+- The environment variables **POSTGRES_DATABASE**, **POSTGRES_USER**, **POSTGRES_PASSWORD**, **POSTGRES_HOST**, **POSTGRES_PORT** should be set or provided in an **.env** file in the root directory of the project. See [https://12factor.net/config](https://12factor.net/config) and [https://pypi.org/project/python-dotenv/](https://pypi.org/project/python-dotenv/).  
 These environment variables provide the parameters for a connection to a conforming database. See [https://www.psycopg.org/docs/module.html](https://www.psycopg.org/docs/module.html).
+
+## Password Handling
+- The passwords of accounts are hashed with salts before being stored in the database. Then, passwords are compared with the hashes to check that they match.
+- In **Python**, *bcrypt* is used to generate the salt and hash the password with it. Then it is also used to check whether a given password matches with the stored hash - to allow the user to be logged in. Note that *brcrypt* functions work with ***bytes*** so conversion to this type is required. See <https://pypi.org/project/bcrypt/> and <https://docs.python.org/3/library/stdtypes.html>.
+- Stored hashes are returned from the database as a ***memoryview***, due to the default adaptation of ***BYTEA*** in **PostgreSQL** as per *psycopg2*. Hence, they must be converted to ***bytes*** using the `.tobytes()` method of ***memoryview*** for example. See <https://www.psycopg.org/docs/usage.html#adaptation-of-python-values-to-sql-types> and <https://docs.python.org/3/library/stdtypes.html>. 
