@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x14\x61uthentication.proto\x12\x0e\x61uthentication\"9\n\x13\x41uthenticateRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"/\n\x11\x41uthenticateReply\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\x05\x32\x64\n\x0c\x41uthenticate\x12T\n\x08TryLogin\x12#.authentication.AuthenticateRequest\x1a!.authentication.AuthenticateReply\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x14\x61uthentication.proto\x12\x0e\x61uthentication\"9\n\x13\x41uthenticateRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"/\n\x11\x41uthenticateReply\x12\x0e\n\x06status\x18\x01 \x01(\x08\x12\n\n\x02id\x18\x02 \x01(\x05\x32\x62\n\x0c\x41uthenticate\x12R\n\x08TryLogin\x12#.authentication.AuthenticateRequest\x1a!.authentication.AuthenticateReplyb\x06proto3'
 )
 
 
@@ -74,8 +74,8 @@ _AUTHENTICATEREPLY = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='status', full_name='authentication.AuthenticateReply.status', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -130,7 +130,7 @@ _AUTHENTICATE = _descriptor.ServiceDescriptor(
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
   serialized_start=148,
-  serialized_end=248,
+  serialized_end=246,
   methods=[
   _descriptor.MethodDescriptor(
     name='TryLogin',

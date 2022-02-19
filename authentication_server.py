@@ -27,7 +27,7 @@ class Authenticate(authentication_pb2_grpc.AuthenticateServicer):
         mutex.release()
 
         response = authentication_pb2.AuthenticateReply()
-        response.status = "FAILURE" #failure biased
+        response.status = False #failure biased
 
         
         ###
@@ -39,7 +39,7 @@ class Authenticate(authentication_pb2_grpc.AuthenticateServicer):
             givenPasswordPlainBytes = request.password.encode("utf-8")
             if bcrypt.checkpw(givenPasswordPlainBytes, storedPasswordHashBytes):
                 response.id = resultRow[1]
-                response.status = "SUCCESS"
+                response.status = True
         ###
 
         conn.commit()

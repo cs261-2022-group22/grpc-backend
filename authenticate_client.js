@@ -16,7 +16,7 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/authentication.proto';
+var PROTO_PATH = __dirname + '/common/authentication.proto';
 
 var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
@@ -44,7 +44,7 @@ function main() {
         //don't log the user in
     }
     else {
-        if (response.status === "SUCCESS") { //authenticated so log the user in
+        if (response.status === true) { //authenticated so log the user in
             console.log("You are now logged in with id: " + response.id);
         }
         else { //not authenticated
