@@ -1,0 +1,31 @@
+name: Auto deploy to test server
+
+on:
+  push:
+    branches: [ main, test-ci ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: azure
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Display Python version.
+        run: |
+          python --version
+          pip --version
+
+      - name: Deploy to test server
+        run: |
+          sudo systemctl stop cs261-api-server.service
+          rm -rf /mnt/disk/cs261/apiserver
+          cp -rv ../api-backend /mnt/disk/cs261/apiserver
+          cd /mnt/disk/cs261/apiserver
+          python -m venv .
+          source ./bin/activate
+          pip install -r requirements.txt
+          sudo systemctl start cs261-api-server.service
