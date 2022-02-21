@@ -14,7 +14,7 @@ is beneficial due to its high performance.
 - See [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
 - In this specific case, the supporting code is generated from the root directory 
 of the project by using the following command.
-`python -m grpc_tools.protoc -I./common --python_out=. --grpc_python_out=. ./common/authentication.proto`
+`python -m grpc_tools.protoc -I./common --python_out=. --grpc_python_out=. ./common/*.proto`
 - Create a virtual environment according to requirements.txt and activate it. See [https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
 - Start the the server so that the gRPC calls, of its corresponding service, can be serviced.  
 `python <filename>`
