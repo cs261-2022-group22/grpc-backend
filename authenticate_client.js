@@ -16,8 +16,9 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/common/authentication.proto';
+var PROTO_PATH = __dirname + '/common/account.proto';
 
+var google_protobuf_timestamp = require('google-protobuf/google/protobuf/timestamp_pb');
 var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 var packageDefinition = protoLoader.loadSync(
@@ -28,12 +29,12 @@ var packageDefinition = protoLoader.loadSync(
      defaults: true,
      oneofs: true
     });
-var auth_proto = grpc.loadPackageDefinition(packageDefinition).authentication;
+var auth_proto = grpc.loadPackageDefinition(packageDefinition).account_package;
 
 function main() {
   var target = 'localhost:50051';
   
-  var client = new auth_proto.Authenticate(target,
+  var client = new auth_proto.AccountService(target,
                                        grpc.credentials.createInsecure());
   
   client.TryLogin({username: 'test@gmail.com', password: 'test'}, function(err, response) {
@@ -53,6 +54,35 @@ function main() {
         
     }
   });
+
+  const exampleDob = new google_protobuf_timestamp.Timestamp();
+  exampleDob.fromDate(new Date());
+  
+  client.UserRegistration({
+    name: 'Jane Doe', 
+    password: 'test', 
+    email: 'janedoe@gmail.com', 
+    businessarea: {
+        id: 1, 
+        name: 'Private Bank'
+    }, 
+    dateofbirth: exampleDob.toObject()
+    }, function(err, response) {
+      if (err) {
+          console.log("An error has occurred");
+          // console.log(err.message);
+          // console.log(err.code);
+      }
+      else {
+          if (response.status === true) { //authenticated so log the user in
+              console.log("Registration was successful.");
+          }
+          else { //not authenticated
+              console.log("Registration was not successful.")
+          }
+          
+      }
+    });
 }
 
 main();

@@ -5,8 +5,8 @@ from threading import Lock
 from queue import Queue
 
 import grpc
-import authentication_pb2
-import authentication_pb2_grpc
+import account_pb2
+import account_pb2_grpc
 
 import psycopg2
 import bcrypt
@@ -20,13 +20,13 @@ mutex = Lock() #to prevent race conditions
 connCurList = [] #does not get manipulated - another version of the collection below
 connCurQueue = Queue(maxsize=10) #connections to database and corresponding cursors
 
-class Authenticate(authentication_pb2_grpc.AuthenticateServicer):
+class AccountServiceHandler(account_pb2_grpc.AccountServiceServicer):
     def TryLogin(self, request, context):
         mutex.acquire()
         (conn, cur) = connCurQueue.get_nowait() #cursor for performing sql statements
         mutex.release()
 
-        response = authentication_pb2.AuthenticateReply()
+        response = account_pb2.AuthenticateReply()
         response.status = False #failure biased
 
         
@@ -50,10 +50,36 @@ class Authenticate(authentication_pb2_grpc.AuthenticateServicer):
 
         return response
 
+    def UserRegistration(self, request, context):
+        mutex.acquire()
+        (conn, cur) = connCurQueue.get_nowait() #cursor for performing sql statements
+        mutex.release()
+
+        response = account_pb2.RegistrationReply()
+        response.status = False #failure biased
+
+        ###
+        print(request.name)
+        print(request.email)
+        print(request.password)
+        print(request.businessarea.id)
+        print(request.businessarea.name)
+        print(request.dateofbirth.ToDatetime())
+
+        ###
+
+        conn.commit()
+
+        mutex.acquire()
+        connCurQueue.put_nowait((conn, cur))
+        mutex.release()
+
+        return response
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    authentication_pb2_grpc.add_AuthenticateServicer_to_server(Authenticate(), server)
+    account_pb2_grpc.add_AccountServiceServicer_to_server(AccountServiceHandler(), server)
     print("Server started. Listening on port 50051.")
     server.add_insecure_port('[::]:50051')
 
