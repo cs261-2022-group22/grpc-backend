@@ -80,9 +80,13 @@ class AccountServiceHandler(account_pb2_grpc.AccountServiceServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     account_pb2_grpc.add_AccountServiceServicer_to_server(AccountServiceHandler(), server)
-    print("Server started. Listening on port 50051.")
-    server.add_insecure_port('[::]:50051')
+    port = int(os.getenv("GRPC_BACKEND_PORT") or 50051)
+    if port < 1 or port > 65535:
+        print("Invalid port number:", port)
+        exit()
 
+    print("Server started. Listening on port:", port)
+    server.add_insecure_port('[::]:' + str(port))
     #create a connection and corresponding cursor for each thread
     for i in range(10):
         conn = psycopg2.connect( #connection to database

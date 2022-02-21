@@ -1,0 +1,37 @@
+name: Auto deploy to test server
+
+on:
+  push:
+    branches: [ main, test-ci ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: azure
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Display Python version.
+        run: |
+          python --version
+          pip --version
+
+      - name: Stop test server
+        run: sudo systemctl stop cs261-api-server.service
+
+      - name: Deploy to test server
+        run: |
+          rm -rf /mnt/disk/cs261/apiserver
+          cp -rv ../grpc-backend /mnt/disk/cs261/apiserver
+          cd /mnt/disk/cs261/apiserver
+          python -m venv .
+          source ./bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m grpc_tools.protoc -I./common --python_out=. --grpc_python_out=. ./common/*.proto
+
+      - name: Start test server
+        run: sudo systemctl start cs261-api-server.service
