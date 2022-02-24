@@ -83,6 +83,17 @@ function main() {
           
       }
     });
+
+    client.AccountProfiles({userid: 1}, 
+    function(err, response) {
+        if (err) {
+            console.log("An error has occurred");
+        }
+        else {
+            console.log("isMentor:" + response.isMentor + 
+            ";isMentee:" + response.isMentee + ";");
+        }
+      });
 }
 
 main();

@@ -59,12 +59,12 @@ class AccountServiceHandler(account_pb2_grpc.AccountServiceServicer):
         response.status = False #failure biased
 
         ###
-        print(request.name)
-        print(request.email)
-        print(request.password)
-        print(request.businessarea.id)
-        print(request.businessarea.name)
-        print(request.dateofbirth.ToDatetime())
+        # print(request.name)
+        # print(request.email)
+        # print(request.password)
+        # print(request.businessarea.id)
+        # print(request.businessarea.name)
+        # print(request.dateofbirth.ToDatetime())
 
         ###
 
@@ -75,6 +75,35 @@ class AccountServiceHandler(account_pb2_grpc.AccountServiceServicer):
         mutex.release()
 
         return response
+
+    def AccountProfiles(self, request, context):
+        mutex.acquire()
+        (conn, cur) = connCurQueue.get_nowait() #cursor for performing sql statements
+        mutex.release()
+
+        response = account_pb2.ProfilesReply()
+        response.isMentor = False #failure biased
+        response.isMentee = False
+
+        ###
+        cur.execute("SELECT mentorId FROM Mentor WHERE accountId=%s;", 
+        (request.userid,))
+        if cur.fetchone() is not None:
+            response.isMentor = True
+        
+        cur.execute("SELECT menteeId FROM Mentee WHERE accountId=%s;", 
+        (request.userid,))
+        if cur.fetchone() is not None:
+            response.isMentee = True
+        ###
+
+        conn.commit()
+
+        mutex.acquire()
+        connCurQueue.put_nowait((conn, cur))
+        mutex.release()
+
+        return response        
 
 
 def serve():
