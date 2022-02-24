@@ -6,5 +6,5 @@
 __pycache__
 node_modules
 venv
-*_pb2*.py
+protos/*_pb2*.py
 
