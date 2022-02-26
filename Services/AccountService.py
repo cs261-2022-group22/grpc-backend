@@ -2,10 +2,11 @@ import os
 from datetime import datetime
 from queue import Queue
 from threading import Lock
+from typing import List, Tuple
 
 import bcrypt
 import protos.account_package as Account
-import psycopg2
+import psycopg
 from grpclib.server import Server
 
 from utils.thread_execute import run_in_thread
@@ -13,8 +14,8 @@ from utils.thread_execute import run_in_thread
 gRPCServer: Server
 
 connMutex = Lock()  # to prevent race conditions
-connCurList = []  # does not get manipulated - another version of the collection below
-connCurQueue: Queue = Queue(maxsize=10)  # connections to database and corresponding cursors
+connCurList: List[Tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
+connCurQueue: Queue[Tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=10)  # connections to database and corresponding cursors
 
 
 class AccountService(Account.AccountServiceBase):
@@ -41,7 +42,7 @@ def tryLogin(username: str, password: str) -> Account.AuthenticateReply:
     if (resultRow := cur.fetchone()) is not None:
         # The default output format of bytes in the database is memory view. Thus, this
         # must be converted to the bytes datatype for use with brcrypt functions.
-        storedPasswordHashBytes = (resultRow[0]).tobytes()
+        storedPasswordHashBytes = resultRow[0]
         givenPasswordPlainBytes = password.encode("utf-8")
         if bcrypt.checkpw(givenPasswordPlainBytes, storedPasswordHashBytes):
             response.id = resultRow[1]
@@ -116,7 +117,7 @@ async def serve(port: int):
     # create a connection and corresponding cursor for each thread
     for _ in range(10):
         # connection to database
-        conn: psycopg2.connection = psycopg2.connect(
+        conn: psycopg.Connection = psycopg.connect(
             "dbname=" +
             os.getenv("POSTGRES_DATABASE", "mentoring") +
             " user=" +
@@ -128,7 +129,7 @@ async def serve(port: int):
             " port=" +
             os.getenv("POSTGRES_PORT", "")
         )
-        cur: psycopg2.cursor = conn.cursor()
+        cur: psycopg.Cursor = conn.cursor()
         connCurQueue.put_nowait((conn, cur))
         connCurList.append((conn, cur))
 
