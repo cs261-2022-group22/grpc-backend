@@ -1,7 +1,6 @@
 from datetime import datetime
 from queue import Queue
 from threading import Lock
-from time import sleep
 
 import bcrypt
 import psycopg
