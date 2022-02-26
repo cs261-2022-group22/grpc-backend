@@ -37,12 +37,12 @@ The generated code goes to `compiled_protos/`, as stated below:
 ## Python gRPC Server
 
 - See [gRPC QuickStart](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
-- Don't forget to install required dependencies before going on, install them by running:
+- Create a virtual environment and activate it.
+    - See [Creating Virtual Environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
+- Set up according to requirements.txt by installing the required dependencies.
     - `pip install -r ./requirements.txt`
 - The supporting code is generated from the root directory of the project by using the following command:
     - `python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto`
-- Create a virtual environment according to requirements.txt and activate it.
-    - See [Creating Virtual Environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
 - Start the the server so that the gRPC calls, of its corresponding service, can be serviced.  
     - `python <proto_name>_server.py`
 - Hit Ctrl-C to stop the server.
