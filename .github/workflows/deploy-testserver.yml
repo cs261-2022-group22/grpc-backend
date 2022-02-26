@@ -31,7 +31,7 @@ jobs:
           source ./bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
-          python -m grpc_tools.protoc -I./common --python_out=. --grpc_python_out=. ./common/*.proto
+          python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto
 
       - name: Start test server
         run: sudo systemctl start cs261-api-server.service
