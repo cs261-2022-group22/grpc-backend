@@ -9,7 +9,7 @@ from protos.account_package import (AuthenticateReply, ProfilesReply,
 
 connMutex = Lock()  # to prevent race conditions
 connCurList: list[tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
-connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=10)  # connections to database and corresponding cursors
+connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=16)  # connections to database and corresponding cursors
 
 
 def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
