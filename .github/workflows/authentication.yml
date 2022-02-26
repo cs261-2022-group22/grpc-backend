@@ -34,10 +34,10 @@ jobs:
           python -m venv venv
           source ./venv/bin/activate
           pip install -r ./requirements.txt
-          python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./protos/ ./common/*.proto
+          python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto
 
       - name: Lint with flake8
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude "venv/,protos/"
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=150 --statistics --exclude "venv/,protos/"
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude "venv/,compiled_protos/"
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=150 --statistics --exclude "venv/,compiled_protos/"
 
