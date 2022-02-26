@@ -62,6 +62,7 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
     connMutex.acquire()
     connCurQueue.put_nowait((conn, cur))
     connMutex.release()
+    return response
 
 
 def accountProfilesImpl(userid: int) -> ProfilesReply:
