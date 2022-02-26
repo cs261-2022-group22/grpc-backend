@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 
-import Services.AccountService as AccountService
+import services.AccountService as AccountService
 from dotenv import load_dotenv
 
 # The entry-point code of Account Service
