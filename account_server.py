@@ -2,8 +2,9 @@ import asyncio
 import logging
 import os
 
-import services.AccountService as AccountService
 from dotenv import load_dotenv
+
+import services.AccountService as AccountService
 
 # The entry-point code of Account Service
 
@@ -27,6 +28,7 @@ if __name__ == '__main__':
     try:
         loop = asyncio.new_event_loop()
         loop.run_until_complete(AccountService.beginServe(ConnectionString, port))
-        loop.close()
     except KeyboardInterrupt:
-        AccountService.stopServe()
+        loop.run_until_complete(AccountService.stopServe())
+    finally:
+        loop.close()

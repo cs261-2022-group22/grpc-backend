@@ -41,14 +41,16 @@ async def beginServe(connectionString: str, port: int):
     await gRPCServer.wait_closed()
 
 
-def stopServe():
-    global gRPCServer
-    if gRPCServer.is_serving:
-        gRPCServer.close()
+async def stopServe():
+    print("Account Service Server stopped.")
 
     # clean up
     for i in range(16):
         (conn, cur) = connCurList[i]
         cur.close()
         conn.close()
-    print("Account Service Server stopped.")
+
+    global gRPCServer
+    if gRPCServer.is_serving:
+        gRPCServer.close()
+        return await gRPCServer.wait_closed()
