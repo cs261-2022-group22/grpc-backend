@@ -7,10 +7,12 @@
     
 
 ## gRPC
+
 - gRPC defines services. These services provide remote procedural calls (RPCs). A server corresponds to a particular service and implements its RPCs so that clients can send call requests for these and receive responses. For each RPC, the request and response type is declared. This specifies the parameters of the call requests, from the client, and the variables that are returned in responses, from the server. Services are defined with **.proto** files. gRPC
 is beneficial due to its high performance.
 
 ## Python gRPC Server
+
 - See [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
 - In this specific case, the supporting code is generated from the root directory 
 of the project by using the following command.
@@ -21,6 +23,7 @@ of the project by using the following command.
 - Ctrl-C to stop the server.
 
 ## Node.js Javascript GRPC Client
+
 - See [https://grpc.io/docs/languages/node/quickstart/](https://grpc.io/docs/languages/node/quickstart/) for how Node gRPC clients are built.
 - Install dependencies according to **package.json**.  
 `npm install`
@@ -28,11 +31,12 @@ of the project by using the following command.
 `node <filename>`
 
 ## PostgreSQL Database
-- A PostgreSQL database according to **schema.sql** is utilised for the data persistence of the application.
+
+- A PostgreSQL database according to **[schema.sql](https://github.com/cs261-2022-group22/postgresql-schema/blob/main/schema.sql)** is utilised for the data persistence of the application.
 - The environment variables **POSTGRES_DATABASE**, **POSTGRES_USER**, **POSTGRES_PASSWORD**, **POSTGRES_HOST**, **POSTGRES_PORT** should be set or provided in an **.env** file in the root directory of the project. See [https://12factor.net/config](https://12factor.net/config) and [https://pypi.org/project/python-dotenv/](https://pypi.org/project/python-dotenv/).  
 These environment variables provide the parameters for a connection to a conforming database. See [https://www.psycopg.org/docs/module.html](https://www.psycopg.org/docs/module.html).
 
 ## Password Handling
+
 - The passwords of accounts are hashed with salts before being stored in the database. Then, passwords are compared with the hashes to check that they match.
-- In **Python**, *bcrypt* is used to generate the salt and hash the password with it. Then it is also used to check whether a given password matches with the stored hash - to allow the user to be logged in. Note that *brcrypt* functions work with ***bytes*** so conversion to this type is required. See <https://pypi.org/project/bcrypt/> and <https://docs.python.org/3/library/stdtypes.html>.
-- Stored hashes are returned from the database as a ***memoryview***, due to the default adaptation of ***BYTEA*** in **PostgreSQL** as per *psycopg2*. Hence, they must be converted to ***bytes*** using the `.tobytes()` method of ***memoryview*** for example. See <https://www.psycopg.org/docs/usage.html#adaptation-of-python-values-to-sql-types> and <https://docs.python.org/3/library/stdtypes.html>. 
+- In **Python**, *bcrypt* is used to generate the salt and hash the password with it. Then it is also used to check whether a given password matches with the stored hash - to allow the user to be logged in. See <https://pypi.org/project/bcrypt/> and <https://docs.python.org/3/library/stdtypes.html>.
