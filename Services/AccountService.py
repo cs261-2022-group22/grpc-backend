@@ -1,17 +1,24 @@
 
-from Services.AccountServiceImpl import *
+import psycopg
+from grpclib.server import Server
 from protos.account_package import *
 from utils.thread_execute import run_in_thread
 
+from Services.AccountServiceImpl import (accountProfilesImpl, connCurList,
+                                         connCurQueue, registerUserImpl,
+                                         tryLoginImpl)
 
-class AccountService(Account.AccountServiceBase):
+gRPCServer: Server
+
+
+class AccountService(AccountServiceBase):
     async def try_login(self, username: str, password: str) -> AuthenticateReply:
         return await run_in_thread(tryLoginImpl, username, password)
 
-    async def register_user(self, name: str, date_of_birth: datetime, email: str, password: str, business_area_id: int) -> Account.RegistrationReply:
+    async def register_user(self, name: str, date_of_birth: datetime, email: str, password: str, business_area_id: int) -> RegistrationReply:
         return await run_in_thread(registerUserImpl, name, date_of_birth, email, password, business_area_id)
 
-    async def account_profiles(self, userid: int) -> Account.ProfilesReply:
+    async def account_profiles(self, userid: int) -> ProfilesReply:
         return await run_in_thread(accountProfilesImpl, userid)
 
 
@@ -27,7 +34,7 @@ async def beginServe(connectionString: str, port: int):
     global gRPCServer
     gRPCServer = Server([AccountService()])
     await gRPCServer.start("127.0.0.1", port)
-    print("Server started. Listening on port:", port)
+    print("Account Service Server started. Listening on port:", port)
     await gRPCServer.wait_closed()
 
 
@@ -41,5 +48,4 @@ def stopServe():
         (conn, cur) = connCurList[i]
         cur.close()
         conn.close()
-    print("Server stopped.")
-    pass
+    print("Account Service Server stopped.")

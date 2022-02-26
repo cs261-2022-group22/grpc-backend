@@ -1,36 +1,27 @@
-import os
 from datetime import datetime
 from queue import Queue
 from threading import Lock
-from typing import List, Tuple
 
 import bcrypt
-import protos.account_package as Account
 import psycopg
-from grpclib.server import Server
-
-from utils.thread_execute import run_in_thread
-
-gRPCServer: Server
+from protos.account_package import *
 
 connMutex = Lock()  # to prevent race conditions
-connCurList: List[Tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
-connCurQueue: Queue[Tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=10)  # connections to database and corresponding cursors
+connCurList: list[tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
+connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=10)  # connections to database and corresponding cursors
 
 
-def tryLoginImpl(username: str, password: str) -> Account.AuthenticateReply:
+def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
     connMutex.acquire()
     (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
     connMutex.release()
 
-    response = Account.AuthenticateReply()
+    response = AuthenticateReply()
     response.status = False  # failure biased
 
     ###
     cur.execute("SELECT passwordHash, accountId FROM Account WHERE email=%s;", (username,))
     if (resultRow := cur.fetchone()) is not None:
-        # The default output format of bytes in the database is memory view. Thus, this
-        # must be converted to the bytes datatype for use with brcrypt functions.
         storedPasswordHashBytes = resultRow[0]
         givenPasswordPlainBytes = password.encode("utf-8")
         if bcrypt.checkpw(givenPasswordPlainBytes, storedPasswordHashBytes):
@@ -52,7 +43,7 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
     (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
     connMutex.release()
 
-    response = Account.RegistrationReply()
+    response = RegistrationReply()
     response.status = False  # failure biased
 
     ###
@@ -72,12 +63,12 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
     connMutex.release()
 
 
-def accountProfilesImpl(userid: int) -> Account.ProfilesReply:
+def accountProfilesImpl(userid: int) -> ProfilesReply:
     connMutex.acquire()
     (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
     connMutex.release()
 
-    response = Account.ProfilesReply()
+    response = ProfilesReply()
     response.is_mentor = False  # failure biased
     response.is_mentee = False
 

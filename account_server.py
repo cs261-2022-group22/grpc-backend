@@ -5,6 +5,7 @@ import os
 import Services.AccountService as AccountService
 from dotenv import load_dotenv
 
+# The entry-point code of Account Service
 
 if __name__ == '__main__':
     load_dotenv()
