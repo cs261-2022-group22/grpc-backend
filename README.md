@@ -20,6 +20,14 @@ services/                   # Directory for these services
 - gRPC defines services. These services provide remote procedural calls (RPCs). A server corresponds to a particular service and implements its RPCs so that clients can send call requests for these and receive responses. For each RPC, the request and response type is declared. This specifies the parameters of the call requests, from the client, and the variables that are returned in responses, from the server. Services are defined with **`.proto`** files. gRPC
 is beneficial due to its high performance.
 
+## [BetterProto](https://github.com/danielgtaylor/python-betterproto)
+
+It's a drop-in replacement of Google's protobuf library, it provides:
+
+- Better type-hinting
+- Cleaner generated source files.
+- and finally, async support (but trapped by an upstream Python bug)
+
 ## Python gRPC Server
 
 - See [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
