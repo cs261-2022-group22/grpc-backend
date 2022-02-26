@@ -1,9 +1,14 @@
+# Holding markupsafe at 2.0.1, until https://github.com/danielgtaylor/python-betterproto/issues/341 has been resolved
+markupsafe==2.0.1
+
 bcrypt==3.2.0
 cffi==1.15.0
-grpcio==1.43.0        
-grpcio-tools==1.43.0  
-protobuf==3.19.4      
-psycopg2-binary==2.9.3
-pycparser==2.21       
-python-dotenv==0.19.2 
+grpcio==1.44.0
+grpcio-tools==1.44.0
+protobuf==3.19.4
+pycparser==2.21
+python-dotenv==0.19.2
 six==1.16.0
+betterproto[compiler]==v2.0.0b4
+psycopg-binary==3.0.9
+psycopg==3.0.9

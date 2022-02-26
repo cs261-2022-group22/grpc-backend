@@ -58,7 +58,7 @@ function main() {
   const exampleDob = new google_protobuf_timestamp.Timestamp();
   exampleDob.fromDate(new Date());
   
-  client.UserRegistration({
+  client.RegisterUser({
     name: 'Jane Doe', 
     password: 'test', 
     email: 'janedoe@gmail.com', 

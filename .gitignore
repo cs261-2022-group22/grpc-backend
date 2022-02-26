@@ -1,5 +1,11 @@
+.idea/
+.DS_Store
+.mypy_cache/
+.vscode/
+
 .env
 __pycache__
 node_modules
 venv
-*_pb2*.py
+compiled_protos/
+
