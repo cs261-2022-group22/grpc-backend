@@ -11,3 +11,4 @@ python-dotenv==0.19.2
 six==1.16.0
 betterproto[compiler]==v2.0.0b4
 psycopg-binary==3.0.9
+psycopg==3.0.9
