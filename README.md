@@ -9,10 +9,14 @@
 
 ```
 common/                     # The Git submodule, holding common proto files
-*_server.py                 # The entry point of each service, no detailed implementation
-services/                   # Directory for these services
-   ...  /*Service.py        # The code for gRPC service, contains just the gRPC class wrapper
-   ...  /*ServiceImpl.py    # The actual service implementation code being executed.
+compiled_protos/            # Where the compiled protobuf files are located
+services/                   # Directory for each microservices
+   ...  /*Service.py        # Service wrapper code, contains the gRPC class wrapper and the
+                            # begin/endServe functions.
+   ...  /*ServiceImpl.py    # Service implementation code, the actual logic being executed is here
+                            # "Impl" for Implementation.
+
+*_server.py                 # The entry point of each service.
 ```
 
 ## gRPC
@@ -28,17 +32,19 @@ It's a drop-in replacement of Google's protobuf library, it provides:
 - Cleaner generated source files.
 - and finally, async support (but trapped by an upstream Python bug)
 
+The generated code goes to `compiled_protos/`, as stated below:
+
 ## Python gRPC Server
 
-- See [https://grpc.io/docs/languages/python/quickstart/](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
+- See [gRPC QuickStart](https://grpc.io/docs/languages/python/quickstart/) for how supporting code files are generated. This also illustrates how Python gRPC servers are built.
 - Don't forget to install required dependencies before going on, install them by running:
     - `pip install -r ./requirements.txt`
-- In this specific case, the supporting code is generated from the root directory of the project by using the following command:
-    - `python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./protos/ ./common/*.proto`
+- The supporting code is generated from the root directory of the project by using the following command:
+    - `python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto`
 - Create a virtual environment according to requirements.txt and activate it.
-    - See [https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
+    - See [Creating Virtual Environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
 - Start the the server so that the gRPC calls, of its corresponding service, can be serviced.  
-    - `python <filename>`
+    - `python <service_name>_server.py`
 - Hit Ctrl-C to stop the server.
 
 ## Node.js Javascript GRPC Client
