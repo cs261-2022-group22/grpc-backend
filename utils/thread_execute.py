@@ -1,7 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
-executor = ThreadPoolExecutor(32, 'worker_')
+executor = ThreadPoolExecutor(16, 'worker_')
 
 # Python doesn't support varadic parameter forwarding, so we use this...
 # TODO: Find a better way

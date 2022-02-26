@@ -44,7 +44,7 @@ def stopServe():
         gRPCServer.close()
 
     # clean up
-    for i in range(10):
+    for i in range(16):
         (conn, cur) = connCurList[i]
         cur.close()
         conn.close()
