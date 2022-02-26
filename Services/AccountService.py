@@ -141,6 +141,7 @@ async def serve(port: int):
 
 
 def close():
+    global gRPCServer
     if gRPCServer.is_serving:
         gRPCServer.close()
 
