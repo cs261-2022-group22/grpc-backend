@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import sys
 import selectors
 
 from dotenv import load_dotenv
@@ -32,6 +31,6 @@ if __name__ == '__main__':
         loop = asyncio.SelectorEventLoop(selector)
         loop.run_until_complete(AccountService.beginServe(ConnectionString, port))
     except KeyboardInterrupt:
-        loop.run_until_complete(AccountService.stopServe())
+        loop.run_until_complete(AccountService.endServe())
     finally:
         loop.close()

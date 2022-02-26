@@ -1,16 +1,15 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+# TODO: Allocate executor for each services
 executor = ThreadPoolExecutor(16, 'worker_')
 
-# Python doesn't support varadic parameter forwarding, so we use this...
-# TODO: Find a better way
 
-
-def closePool():
+def shutdown_thread_pool():
     executor.shutdown(wait=True)
 
 
+# TODO: Find a better way of doing this
 async def run_in_thread(func, arg1=None, arg2=None, arg3=None, arg4=None, arg5=None, arg6=None, arg7=None, arg8=None):
     if arg1 is None:
         return await asyncio.get_event_loop().run_in_executor(executor, func)
