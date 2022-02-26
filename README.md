@@ -5,6 +5,15 @@
 > ### Disclaimer:
 > This is written according to my interpretation of gRPC. As I have no experience with gRPC prior to this project, there may be errors contained within this document. Please see [https://grpc.io/docs/](https://grpc.io/docs/) for the official documentation which should serve as the canonical source regarding this topic.
 
+## Project File Sturcture
+
+```
+common/                     # The Git submodule, holding common proto files
+*_server.py                 # The entry point of each service, no detailed implementation
+services/                   # Directory for these services
+   ...  /*Service.py        # The code for gRPC service, contains just the gRPC class wrapper
+   ...  /*ServiceImpl.py    # The actual service implementation code being executed.
+```
 
 ## gRPC
 
