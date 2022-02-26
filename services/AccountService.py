@@ -1,6 +1,7 @@
 
-import psycopg
 import datetime
+
+import psycopg
 from grpclib.server import Server
 from protos.account_package import (AccountServiceBase, AuthenticateReply,
                                     ProfilesReply, RegistrationReply)
