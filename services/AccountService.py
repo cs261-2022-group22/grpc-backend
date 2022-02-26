@@ -24,7 +24,7 @@ class AccountService(AccountServiceBase):
 
 async def beginServe(connectionString: str, port: int):
     # create a connection and corresponding cursor for each thread
-    for _ in range(10):
+    for _ in range(16):
         # connect to database
         conn: psycopg.Connection = psycopg.connect(connectionString)
         cur: psycopg.Cursor = conn.cursor()
