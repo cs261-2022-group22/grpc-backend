@@ -7,6 +7,10 @@ executor = ThreadPoolExecutor(16, 'worker_')
 # TODO: Find a better way
 
 
+def closePool():
+    executor.shutdown(wait=True)
+
+
 async def run_in_thread(func, arg1=None, arg2=None, arg3=None, arg4=None, arg5=None, arg6=None, arg7=None, arg8=None):
     if arg1 is None:
         return await asyncio.get_event_loop().run_in_executor(executor, func)

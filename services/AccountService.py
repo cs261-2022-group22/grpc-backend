@@ -5,7 +5,7 @@ import psycopg
 from grpclib.server import Server
 from protos.account_package import (AccountServiceBase, AuthenticateReply,
                                     ProfilesReply, RegistrationReply)
-from utils.thread_execute import run_in_thread
+from utils.thread_execute import closePool, run_in_thread
 
 from services.AccountServiceImpl import (accountProfilesImpl, connCurList,
                                          connCurQueue, registerUserImpl,
@@ -42,8 +42,8 @@ async def beginServe(connectionString: str, port: int):
 
 
 async def stopServe():
-    print("Account Service Server stopped.")
-
+    print("Stopping Account Service...")
+    closePool()
     # clean up
     for i in range(16):
         (conn, cur) = connCurList[i]
@@ -51,6 +51,6 @@ async def stopServe():
         conn.close()
 
     global gRPCServer
-    if gRPCServer.is_serving:
-        gRPCServer.close()
-        return await gRPCServer.wait_closed()
+    gRPCServer.close()
+    await gRPCServer.wait_closed()
+    print("Account Service Stopped.")
