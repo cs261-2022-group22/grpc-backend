@@ -4,8 +4,8 @@ from threading import Lock
 
 import bcrypt
 import psycopg
-from protos.account_package import (AuthenticateReply, ProfilesReply,
-                                    RegistrationReply)
+from compiled_protos.account_package import (AuthenticateReply, ProfilesReply,
+                                             RegistrationReply)
 
 connMutex = Lock()  # to prevent race conditions
 connCurList: list[tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
