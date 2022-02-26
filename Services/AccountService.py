@@ -8,6 +8,8 @@ import protos.account_package as Account
 import psycopg2
 from grpclib.server import Server
 
+from utils.thread_execute import run_in_thread
+
 gRPCServer: Server
 
 connMutex = Lock()  # to prevent race conditions
@@ -17,87 +19,97 @@ connCurQueue: Queue = Queue(maxsize=10)  # connections to database and correspon
 
 class AccountService(Account.AccountServiceBase):
     async def try_login(self, username: str, password: str) -> Account.AuthenticateReply:
-        connMutex.acquire()
-        (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
-        connMutex.release()
-
-        response = Account.AuthenticateReply()
-        response.status = False  # failure biased
-
-        ###
-        cur.execute("SELECT passwordHash, accountId FROM Account WHERE email=%s;", (username,))
-        if (resultRow := cur.fetchone()) is not None:
-            # The default output format of bytes in the database is memory view. Thus, this
-            # must be converted to the bytes datatype for use with brcrypt functions.
-            storedPasswordHashBytes = (resultRow[0]).tobytes()
-            givenPasswordPlainBytes = password.encode("utf-8")
-            if bcrypt.checkpw(givenPasswordPlainBytes, storedPasswordHashBytes):
-                response.id = resultRow[1]
-                response.status = True
-        ###
-
-        conn.commit()
-
-        connMutex.acquire()
-        connCurQueue.put_nowait((conn, cur))
-        connMutex.release()
-
-        return response
+        return await run_in_thread(tryLogin, username, password)
 
     async def register_user(self, name: str, date_of_birth: datetime, email: str, password: str, business_area_id: int) -> Account.RegistrationReply:
-        connMutex.acquire()
-        (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
-        connMutex.release()
-
-        response = Account.RegistrationReply()
-        response.status = False  # failure biased
-
-        ###
-        # print(request.name)
-        # print(request.email)
-        # print(request.password)
-        # print(request.businessarea.id)
-        # print(request.businessarea.name)
-        print(date_of_birth)
-
-        ###
-
-        conn.commit()
-
-        connMutex.acquire()
-        connCurQueue.put_nowait((conn, cur))
-        connMutex.release()
-
-        return response
+        return await run_in_thread(registerUser, name, date_of_birth, email, password, business_area_id)
 
     async def account_profiles(self, userid: int) -> Account.ProfilesReply:
-        connMutex.acquire()
-        (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
-        connMutex.release()
+        return await run_in_thread(accountProfiles, userid)
 
-        response = Account.ProfilesReply()
-        response.is_mentor = False  # failure biased
-        response.is_mentee = False
 
-        ###
-        cur.execute("SELECT mentorId FROM Mentor WHERE accountId=%s;",
-                    (userid,))
-        if cur.fetchone() is not None:
-            response.is_mentor = True
+def tryLogin(username: str, password: str) -> Account.AuthenticateReply:
+    connMutex.acquire()
+    (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
+    connMutex.release()
 
-        cur.execute("SELECT menteeId FROM Mentee WHERE accountId=%s;",
-                    (userid,))
-        if cur.fetchone() is not None:
-            response.is_mentee = True
-        ###
+    response = Account.AuthenticateReply()
+    response.status = False  # failure biased
 
-        conn.commit()
+    ###
+    cur.execute("SELECT passwordHash, accountId FROM Account WHERE email=%s;", (username,))
+    if (resultRow := cur.fetchone()) is not None:
+        # The default output format of bytes in the database is memory view. Thus, this
+        # must be converted to the bytes datatype for use with brcrypt functions.
+        storedPasswordHashBytes = (resultRow[0]).tobytes()
+        givenPasswordPlainBytes = password.encode("utf-8")
+        if bcrypt.checkpw(givenPasswordPlainBytes, storedPasswordHashBytes):
+            response.id = resultRow[1]
+            response.status = True
+    ###
 
-        connMutex.acquire()
-        connCurQueue.put_nowait((conn, cur))
-        connMutex.release()
+    conn.commit()
 
-        return response
+    connMutex.acquire()
+    connCurQueue.put_nowait((conn, cur))
+    connMutex.release()
+
+    return response
+
+
+def registerUser(name: str, date_of_birth: datetime, email: str, password: str, business_area_id: int):
+    connMutex.acquire()
+    (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
+    connMutex.release()
+
+    response = Account.RegistrationReply()
+    response.status = False  # failure biased
+
+    ###
+    # print(request.name)
+    # print(request.email)
+    # print(request.password)
+    # print(request.businessarea.id)
+    # print(request.businessarea.name)
+    print(date_of_birth)
+
+    ###
+
+    conn.commit()
+
+    connMutex.acquire()
+    connCurQueue.put_nowait((conn, cur))
+    connMutex.release()
+
+
+def accountProfiles(userid: int) -> Account.ProfilesReply:
+    connMutex.acquire()
+    (conn, cur) = connCurQueue.get_nowait()  # cursor for performing sql statements
+    connMutex.release()
+
+    response = Account.ProfilesReply()
+    response.is_mentor = False  # failure biased
+    response.is_mentee = False
+
+    ###
+    cur.execute("SELECT mentorId FROM Mentor WHERE accountId=%s;",
+                (userid,))
+    if cur.fetchone() is not None:
+        response.is_mentor = True
+
+    cur.execute("SELECT menteeId FROM Mentee WHERE accountId=%s;",
+                (userid,))
+    if cur.fetchone() is not None:
+        response.is_mentee = True
+    ###
+
+    conn.commit()
+
+    connMutex.acquire()
+    connCurQueue.put_nowait((conn, cur))
+    connMutex.release()
+
+    return response
 
 
 async def serve(port: int):

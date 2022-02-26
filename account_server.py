@@ -5,6 +5,7 @@ import os
 import Services.AccountService as AccountService
 from dotenv import load_dotenv
 
+
 if __name__ == '__main__':
     load_dotenv()
     logging.basicConfig()
@@ -14,12 +15,9 @@ if __name__ == '__main__':
         print("Invalid port number:", port)
         exit()
 
-    async def main():
-        await AccountService.serve(port)
-
     try:
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(main())
+        loop.run_until_complete(AccountService.serve(port))
         loop.close()
     except KeyboardInterrupt:
         AccountService.close()
