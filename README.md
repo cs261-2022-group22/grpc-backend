@@ -44,7 +44,7 @@ The generated code goes to `compiled_protos/`, as stated below:
 - Create a virtual environment according to requirements.txt and activate it.
     - See [Creating Virtual Environments](https://packaging.python.org/en/latest/tutorials/installing-packages/#creating-virtual-environments).
 - Start the the server so that the gRPC calls, of its corresponding service, can be serviced.  
-    - `python <service_name>_server.py`
+    - `python <proto_name>_server.py`
 - Hit Ctrl-C to stop the server.
 
 ## Node.js Javascript GRPC Client
