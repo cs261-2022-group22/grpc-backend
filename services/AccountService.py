@@ -2,14 +2,15 @@ import datetime
 
 import psycopg
 from compiled_protos.account_package import (AccountServiceBase,
-                                             AuthenticateReply, ProfilesReply,
-                                             RegistrationReply)
+                                             AuthenticateReply,
+                                             ListBusinessAreasReply,
+                                             ProfilesReply, RegistrationReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
 from services.AccountServiceImpl import (accountProfilesImpl, connCurList,
-                                         connCurQueue, registerUserImpl,
-                                         tryLoginImpl)
+                                         connCurQueue, listBusinessAreasImpl,
+                                         registerUserImpl, tryLoginImpl)
 
 gRPCServer: Server
 
@@ -23,6 +24,9 @@ class AccountService(AccountServiceBase):
 
     async def account_profiles(self, userid: int) -> ProfilesReply:
         return await run_in_thread(accountProfilesImpl, userid)
+
+    async def list_business_areas(self) -> ListBusinessAreasReply:
+        return await run_in_thread(listBusinessAreasImpl)
 
 
 async def beginServe(connectionString: str, port: int):
