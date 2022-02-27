@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import selectors
 
 from dotenv import load_dotenv
 
@@ -27,8 +26,7 @@ if __name__ == '__main__':
     ConnectionString = f'dbname={DBName} user={DBUser} password={DBPassword} host={DBHost} port={DBPort}'
 
     try:
-        selector = selectors.SelectSelector()
-        loop = asyncio.SelectorEventLoop(selector)
+        loop = asyncio.new_event_loop()
         loop.run_until_complete(AccountService.beginServe(ConnectionString, port))
     except KeyboardInterrupt:
         loop.run_until_complete(AccountService.endServe())
