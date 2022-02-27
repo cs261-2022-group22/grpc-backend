@@ -1,38 +1,18 @@
-import inspect
 from datetime import datetime
 from logging import error
-from queue import Queue
-from threading import Lock
 
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              ListBusinessAreasReply,
                                              ProfilesReply, RegistrationReply)
-
-connMutex = Lock()  # to prevent race conditions
-connCurList: list[tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
-connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=16)  # connections to database and corresponding cursors
-
-
-def beforeHandlingRequest():
-    funcName = inspect.currentframe().f_back.f_code.co_name
-    print(f'Processing "{funcName}"')
-    connMutex.acquire()
-    # cursor for performing sql statements
-    (conn, cur) = connCurQueue.get_nowait()
-    connMutex.release()
-    return (conn, cur)
-
-
-def afterHandlingRequest(conn: psycopg.Connection, cur: psycopg.Cursor):
-    connMutex.acquire()
-    connCurQueue.put_nowait((conn, cur))
-    connMutex.release()
+from utils.connection_pool import (acquire_from_connection_pool, release_to_connection_pool, 
+                                    initialise_connection_pool, 
+                                    shutdown_connection_pool)
 
 
 def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
-    (conn, cur) = beforeHandlingRequest()
+    (conn, cur) = acquire_from_connection_pool()
 
     response = AuthenticateReply()
     response.status = False  # failure biased
@@ -48,12 +28,12 @@ def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
     ###
 
     conn.commit()
-    afterHandlingRequest(conn, cur)
+    release_to_connection_pool(conn, cur)
     return response
 
 
 def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: str, business_area_id: int):
-    (conn, cur) = beforeHandlingRequest()
+    (conn, cur) = acquire_from_connection_pool()
 
     response = RegistrationReply()
     response.status = False  # failure biased
@@ -79,12 +59,12 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
             response.status = False
             response.account_id = None
 
-    afterHandlingRequest(conn, cur)
+    release_to_connection_pool(conn, cur)
     return response
 
 
 def accountProfilesImpl(userid: int) -> ProfilesReply:
-    (conn, cur) = beforeHandlingRequest()
+    (conn, cur) = acquire_from_connection_pool()
 
     response = ProfilesReply()
     response.is_mentor = False  # failure biased
@@ -102,12 +82,12 @@ def accountProfilesImpl(userid: int) -> ProfilesReply:
 
     conn.commit()
 
-    afterHandlingRequest(conn, cur)
+    release_to_connection_pool(conn, cur)
     return response
 
 
 def listBusinessAreasImpl() -> ListBusinessAreasReply:
-    (conn, cur) = beforeHandlingRequest()
+    (conn, cur) = acquire_from_connection_pool()
 
     response = ListBusinessAreasReply()
     cur.execute("SELECT * FROM businesssector;")
@@ -116,5 +96,5 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
     for result in results:
         response.business_areas.append(BusinessArea(result[0], result[1]))
 
-    afterHandlingRequest(conn, cur)
+    release_to_connection_pool(conn, cur)
     return response
