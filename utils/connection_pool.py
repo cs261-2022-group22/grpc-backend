@@ -27,6 +27,7 @@ class ConnectionPool:
 
 
     def release_to_connection_pool(self, conn: psycopg.Connection, cur: psycopg.Cursor) -> None:
+        conn.commit()
         self.connMutex.acquire()
         self.connCurQueue.put_nowait((conn, cur))
         self.connMutex.release()
