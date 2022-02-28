@@ -107,22 +107,22 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
     else "mentorid")
     profileTableName = ("Mentee" if targetProfileType == ProfileType.MENTEE 
     else "Mentor")
-    profileMessagesTableName = ("MenteeMessages" if targetProfileType == ProfileType.MENTEE 
-    else "MentorMessages")
+    profileMessagesTableName = ("MenteeMessage" if targetProfileType == ProfileType.MENTEE 
+    else "MentorMessage")
 
     response = NotificationsReply()
     cur.execute("SELECT " + 
     profileTableIdName + 
     " FROM " + 
     profileTableName + 
-    " WHERE userid = ?;", (userid,))
+    " WHERE accountid = %s;", (userid,))
     profileId = cur.fetchone()[0]
 
     cur.execute("SELECT message FROM " + 
     profileMessagesTableName + 
-    "WHERE " + 
+    " WHERE " + 
     profileTableIdName + 
-    " = ?;", (profileId,))
+    " = %s;", (profileId,))
     notificationResults = cur.fetchall()
     for notificationResult in notificationResults:
         response.desired_notifications.append(notificationResult[0])
