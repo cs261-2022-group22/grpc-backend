@@ -1,12 +1,12 @@
 from datetime import datetime
-from enum import Enum
 from logging import error
 
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
-                                             ListBusinessAreasReply,
-                                             ProfilesReply, RegistrationReply)
+                                             ListBusinessAreasReply, ProfileType,
+                                             ProfilesReply, RegistrationReply, 
+                                             NotificationsReply)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
@@ -100,7 +100,7 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
     return response
 
 
-def getNotificationsImpl(userid: int, targetProfileType: Enum) -> NotificationsReply:
+def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> NotificationsReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
     profileTableIdName = ("menteeid" if targetProfileType == ProfileType.MENTEE 
