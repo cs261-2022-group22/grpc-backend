@@ -23,77 +23,77 @@ var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 var packageDefinition = protoLoader.loadSync(
     PROTO_PATH,
-    {keepCase: true,
-     longs: String,
-     enums: String,
-     defaults: true,
-     oneofs: true
+    {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true
     });
 var auth_proto = grpc.loadPackageDefinition(packageDefinition).account_package;
 
 function main() {
-  var target = 'localhost:50051';
-  
-  var client = new auth_proto.AccountService(target,
-                                       grpc.credentials.createInsecure());
-  
-  client.TryLogin({username: 'test@gmail.com', password: 'test'}, function(err, response) {
-    if (err) {
-        console.log("An error has occurred");
-        // console.log(err.message);
-        // console.log(err.code);
-        //don't log the user in
-    }
-    else {
-        if (response.status === true) { //authenticated so log the user in
-            console.log("You are now logged in with id: " + response.id);
-        }
-        else { //not authenticated
-            console.log("Credentials were invalid.")
-        }
-        
-    }
-  });
+    var target = 'localhost:50051';
 
-  const exampleDob = new google_protobuf_timestamp.Timestamp();
-  exampleDob.fromDate(new Date());
-  
-  client.RegisterUser({
-    name: 'Jane Doe', 
-    password: 'test', 
-    email: 'janedoe@gmail.com', 
-    businessarea: {
-        id: 1, 
-        name: 'Private Bank'
-    }, 
-    dateofbirth: exampleDob.toObject()
-    }, function(err, response) {
-      if (err) {
-          console.log("An error has occurred");
-          // console.log(err.message);
-          // console.log(err.code);
-      }
-      else {
-          if (response.status === true) { //authenticated so log the user in
-              console.log("Registration was successful.");
-          }
-          else { //not authenticated
-              console.log("Registration was not successful.")
-          }
-          
-      }
-    });
+    var client = new auth_proto.AccountService(target,
+        grpc.credentials.createInsecure());
 
-    client.AccountProfiles({userid: 1}, 
-    function(err, response) {
+    client.TryLogin({ username: 'test@gmail.com', password: 'test' }, function (err, response) {
         if (err) {
             console.log("An error has occurred");
+            // console.log(err.message);
+            // console.log(err.code);
+            //don't log the user in
         }
         else {
-            console.log("isMentor:" + response.isMentor + 
-            ";isMentee:" + response.isMentee + ";");
+            if (response.status === true) { //authenticated so log the user in
+                console.log("You are now logged in with id: " + response.id);
+            }
+            else { //not authenticated
+                console.log("Credentials were invalid.")
+            }
+
         }
-      });
+    });
+
+    const exampleDob = new google_protobuf_timestamp.Timestamp();
+    exampleDob.fromDate(new Date());
+
+    client.RegisterUser({
+        name: 'Jane Doe',
+        password: 'testpassword',
+        email: 'janedoe@gmail.com',
+        businessAreaId: 1,
+        dateOfBirth: exampleDob.toObject()
+    }, function (err, response) {
+        if (err) {
+            console.log("An error has occurred");
+            // console.log(err.message);
+            // console.log(err.code);
+        }
+        else {
+            if (response.status === true) { //authenticated so log the user in
+                console.log("Registration was successful.");
+            }
+            else { //not authenticated
+                console.log("Registration was not successful.")
+            }
+
+        }
+    });
+
+    client.AccountProfiles({ userid: 1 },
+        function (err, response) {
+            if (err) {
+                console.log("An error has occurred");
+            }
+            else {
+                console.log("isMentor:" + response.isMentor +
+                    ";isMentee:" + response.isMentee + ";");
+            }
+        });
+
+    client.ListBusinessAreas({}, (err, resp) => console.log("ListBusinessAreas:", err ? "An error has occurred" : resp))
 }
 
 main();

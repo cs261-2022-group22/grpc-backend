@@ -2,14 +2,16 @@ import datetime
 
 import psycopg
 from compiled_protos.account_package import (AccountServiceBase,
-                                             AuthenticateReply, ProfilesReply,
-                                             RegistrationReply)
+                                             AuthenticateReply,
+                                             ListBusinessAreasReply,
+                                             ProfilesReply, RegistrationReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
-from services.AccountServiceImpl import (accountProfilesImpl, connCurList,
-                                         connCurQueue, registerUserImpl,
-                                         tryLoginImpl)
+from services.AccountServiceImpl import (accountProfilesImpl, 
+                                         listBusinessAreasImpl,
+                                         registerUserImpl, tryLoginImpl, 
+                                         accountServiceConnectionPool)
 
 gRPCServer: Server
 
@@ -24,15 +26,12 @@ class AccountService(AccountServiceBase):
     async def account_profiles(self, userid: int) -> ProfilesReply:
         return await run_in_thread(accountProfilesImpl, userid)
 
+    async def list_business_areas(self) -> ListBusinessAreasReply:
+        return await run_in_thread(listBusinessAreasImpl)
+
 
 async def beginServe(connectionString: str, port: int):
-    # create a connection and corresponding cursor for each thread
-    for _ in range(16):
-        # connect to database
-        conn: psycopg.Connection = psycopg.connect(connectionString)
-        cur: psycopg.Cursor = conn.cursor()
-        connCurQueue.put_nowait((conn, cur))
-        connCurList.append((conn, cur))
+    accountServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([AccountService()])
@@ -44,11 +43,9 @@ async def beginServe(connectionString: str, port: int):
 async def endServe():
     print("Stopping Account Service...")
     shutdown_thread_pool()
-    # clean up
-    for i in range(16):
-        (conn, cur) = connCurList[i]
-        cur.close()
-        conn.close()
+
+    # clean up connection pool
+    accountServiceConnectionPool.shutdown_connection_pool()
 
     global gRPCServer
     gRPCServer.close()
