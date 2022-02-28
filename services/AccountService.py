@@ -11,8 +11,7 @@ from utils.thread_execute import run_in_thread, shutdown_thread_pool
 from services.AccountServiceImpl import (accountProfilesImpl, 
                                          listBusinessAreasImpl,
                                          registerUserImpl, tryLoginImpl, 
-                                         initialise_connection_pool, 
-                                         shutdown_connection_pool)
+                                         accountServiceConnectionPool)
 
 gRPCServer: Server
 
@@ -32,7 +31,7 @@ class AccountService(AccountServiceBase):
 
 
 async def beginServe(connectionString: str, port: int):
-    initialise_connection_pool(connectionString)
+    accountServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([AccountService()])
@@ -46,7 +45,7 @@ async def endServe():
     shutdown_thread_pool()
 
     # clean up connection pool
-    shutdown_connection_pool()
+    accountServiceConnectionPool.shutdown_connection_pool()
 
     global gRPCServer
     gRPCServer.close()
