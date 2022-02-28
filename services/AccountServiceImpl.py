@@ -26,7 +26,6 @@ def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
             response.status = True
     ###
 
-    conn.commit()
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
 
@@ -52,7 +51,6 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
             print(f'CreateUser: {cur.rowcount} row affected, inserted rowid {accountId}')
             response.status = True
             response.account_id = accountId
-            conn.commit()
         except psycopg.DatabaseError as e:
             error(f'CreateUser: {e}')
             response.status = False
@@ -79,7 +77,6 @@ def accountProfilesImpl(userid: int) -> ProfilesReply:
         response.is_mentee = True
     ###
 
-    conn.commit()
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
