@@ -1,6 +1,6 @@
 import datetime
 
-import psycopg
+from enum import Enum
 from compiled_protos.account_package import (AccountServiceBase,
                                              AuthenticateReply,
                                              ListBusinessAreasReply,
@@ -11,6 +11,7 @@ from utils.thread_execute import run_in_thread, shutdown_thread_pool
 from services.AccountServiceImpl import (accountProfilesImpl, 
                                          listBusinessAreasImpl,
                                          registerUserImpl, tryLoginImpl, 
+                                         getNotificationsImpl, 
                                          accountServiceConnectionPool)
 
 gRPCServer: Server
@@ -29,6 +30,8 @@ class AccountService(AccountServiceBase):
     async def list_business_areas(self) -> ListBusinessAreasReply:
         return await run_in_thread(listBusinessAreasImpl)
 
+    async def get_notifications(self, userid: int, targetProfileType: Enum) -> NotificationsReply:
+        return await run_in_thread(getNotificationsImpl, userid, targetProfileType)
 
 async def beginServe(connectionString: str, port: int):
     accountServiceConnectionPool.initialise_connection_pool(connectionString)

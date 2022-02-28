@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from logging import error
 
 import bcrypt
@@ -94,6 +95,37 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
 
     for result in results:
         response.business_areas.append(BusinessArea(result[0], result[1]))
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+
+def getNotificationsImpl(userid: int, targetProfileType: Enum) -> NotificationsReply:
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    profileTableIdName = ("menteeid" if targetProfileType == ProfileType.MENTEE 
+    else "mentorid")
+    profileTableName = ("Mentee" if targetProfileType == ProfileType.MENTEE 
+    else "Mentor")
+    profileMessagesTableName = ("MenteeMessages" if targetProfileType == ProfileType.MENTEE 
+    else "MentorMessages")
+
+    response = NotificationsReply()
+    cur.execute("SELECT " + 
+    profileTableIdName + 
+    " FROM " + 
+    profileTableName + 
+    " WHERE userid = ?;", (userid,))
+    profileId = cur.fetchone()[0]
+
+    cur.execute("SELECT message FROM " + 
+    profileMessagesTableName + 
+    "WHERE " + 
+    profileTableIdName + 
+    " = ?;", (profileId,))
+    notificationResults = cur.fetchall()
+    for notificationResult in notificationResults:
+        response.desired_notifications.append(notificationResult[0])
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
