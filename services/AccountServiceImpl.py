@@ -57,6 +57,7 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
             error(f'CreateUser: {e}')
             response.status = False
             response.account_id = None
+            conn.rollback();
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
