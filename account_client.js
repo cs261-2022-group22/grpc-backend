@@ -94,6 +94,11 @@ function main() {
         });
 
     client.ListBusinessAreas({}, (err, resp) => console.log("ListBusinessAreas:", err ? "An error has occurred" : resp))
+
+    client.GetNotifications({userid: 1, targetProfileType: "MENTOR"}, 
+        (err, response) => {
+            console.log("GetNotifications:", err ? "An error has occurred" : response);
+        });
 }
 
 main();

@@ -4,8 +4,9 @@ from logging import error
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
-                                             ListBusinessAreasReply,
-                                             ProfilesReply, RegistrationReply)
+                                             ListBusinessAreasReply, ProfileType,
+                                             ProfilesReply, RegistrationReply, 
+                                             NotificationsReply)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
@@ -92,6 +93,37 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
 
     for result in results:
         response.business_areas.append(BusinessArea(result[0], result[1]))
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+
+def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> NotificationsReply:
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    profileTableIdName = ("menteeid" if targetProfileType == ProfileType.MENTEE 
+    else "mentorid")
+    profileTableName = ("Mentee" if targetProfileType == ProfileType.MENTEE 
+    else "Mentor")
+    profileMessagesTableName = ("MenteeMessage" if targetProfileType == ProfileType.MENTEE 
+    else "MentorMessage")
+
+    response = NotificationsReply()
+    cur.execute("SELECT " + 
+    profileTableIdName + 
+    " FROM " + 
+    profileTableName + 
+    " WHERE accountid = %s;", (userid,))
+    profileId = cur.fetchone()[0]
+
+    cur.execute("SELECT message FROM " + 
+    profileMessagesTableName + 
+    " WHERE " + 
+    profileTableIdName + 
+    " = %s;", (profileId,))
+    notificationResults = cur.fetchall()
+    for notificationResult in notificationResults:
+        response.desired_notifications.append(notificationResult[0])
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
