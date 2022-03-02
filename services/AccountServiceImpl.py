@@ -4,12 +4,13 @@ from logging import error
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
-                                             ListBusinessAreasReply, ProfileType,
-                                             ProfilesReply, RegistrationReply, 
-                                             NotificationsReply)
+                                             ListBusinessAreasReply,
+                                             NotificationsReply, ProfilesReply,
+                                             ProfileType, RegistrationReply)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
+
 
 def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
@@ -56,7 +57,7 @@ def registerUserImpl(name: str, date_of_birth: datetime, email: str, password: s
             error(f'CreateUser: {e}')
             response.status = False
             response.account_id = None
-            conn.rollback();
+            conn.rollback()
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
@@ -79,7 +80,6 @@ def accountProfilesImpl(userid: int) -> ProfilesReply:
         response.is_mentee = True
     ###
 
-
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
 
@@ -101,27 +101,25 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
 def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> NotificationsReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
-    profileTableIdName = ("menteeid" if targetProfileType == ProfileType.MENTEE 
-    else "mentorid")
-    profileTableName = ("Mentee" if targetProfileType == ProfileType.MENTEE 
-    else "Mentor")
-    profileMessagesTableName = ("MenteeMessage" if targetProfileType == ProfileType.MENTEE 
-    else "MentorMessage")
+    profileTableIdName = "menteeid" if targetProfileType == ProfileType.MENTEE else "mentorid"
+    profileTableName = "Mentee" if targetProfileType == ProfileType.MENTEE else "Mentor"
+    profileMessagesTableName = "MenteeMessage" if targetProfileType == ProfileType.MENTEE else "MentorMessage"
 
     response = NotificationsReply()
-    cur.execute("SELECT " + 
-    profileTableIdName + 
-    " FROM " + 
-    profileTableName + 
-    " WHERE accountid = %s;", (userid,))
-    profileId = cur.fetchone()[0]
+    cur.execute(f"SELECT {profileTableIdName} FROM {profileTableName} WHERE accountid = %s;", (userid,))
 
-    cur.execute("SELECT message FROM " + 
-    profileMessagesTableName + 
-    " WHERE " + 
-    profileTableIdName + 
-    " = %s;", (profileId,))
+    result = cur.fetchone()
+    if result is None:
+        return response
+
+    profileId = result[0]
+
+    cur.execute(f"SELECT message FROM {profileMessagesTableName} WHERE {profileTableIdName} = %s;", (profileId,))
+
     notificationResults = cur.fetchall()
+    if notificationResults is None:
+        return response
+
     for notificationResult in notificationResults:
         response.desired_notifications.append(notificationResult[0])
 
