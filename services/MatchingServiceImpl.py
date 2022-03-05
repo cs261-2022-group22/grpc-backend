@@ -70,9 +70,11 @@ def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
     # Step 2: RANDOMLY choose a mentor on this
     cur.execute(SELECT_MENTOR_BASED_ON_MATCHING_BUSINESS_SECTOR, (bussinessAreaId,))
     mentors = cur.fetchall()
-    (mentor_id, mentor_name) = random.choice(mentors)
+    if len(mentors) == 0:
+        return GetMatchingMentorReply()
 
     response = GetMatchingMentorReply()
+    (mentor_id, mentor_name) = random.choice(mentors)
     response.mentor_id = mentor_id
     response.mentor_name = mentor_name
 
