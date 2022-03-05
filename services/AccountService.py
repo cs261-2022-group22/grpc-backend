@@ -33,6 +33,7 @@ class AccountService(AccountServiceBase):
     async def get_notifications(self, userid: int, target_profile_type: ProfileType) -> NotificationsReply:
         return await run_in_thread(getNotificationsImpl, userid, target_profile_type)
 
+
 async def beginServe(connectionString: str, port: int):
     accountServiceConnectionPool.initialise_connection_pool(connectionString)
 
