@@ -1,6 +1,5 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from __init__ import allowRootImports
+allowRootImports()
 
 import asyncio
 from grpclib.client import Channel
