@@ -1,21 +1,19 @@
-from __init__ import dataDirPath, allowRootImports
-allowRootImports()
-
 import os
+
 import psycopg
 
 from utils import GetConnectionString
+from . import DataDirectory
 
 conn = psycopg.connect(GetConnectionString())
 cur = conn.cursor()
 
-def processPendingRatingFeedback(businessArea1Id, 
-businessArea2Id, skillOverlap, ageDifference, rating):
+
+def processPendingRatingFeedback(businessArea1Id, businessArea2Id, skillOverlap, ageDifference, rating):
     newEntry = ",".join([str(skillOverlap), str(ageDifference), str(rating)]) + "\n"
 
-
     dataFileName = str(businessArea1Id) + "-" + str(businessArea2Id) + ".csv"
-    dataFilePath = os.path.join(dataDirPath, dataFileName)
+    dataFilePath = os.path.join(DataDirectory, dataFileName)
 
     if not os.path.isfile(dataFilePath):
         with open(dataFilePath, "w") as f:
@@ -24,15 +22,15 @@ businessArea2Id, skillOverlap, ageDifference, rating):
     with open(dataFilePath, "a") as f:
         f.write(newEntry)
 
-    print("process_pending_rating.py: COMPLETE (1 record)")
+    print(__file__, "COMPLETE (1 record)")
 
-if __name__ == "__main__":
-    cur.execute("""DELETE FROM PendingRatingFeedback RETURNING businessarea1id, 
-    businessarea2id, skillOverlap, ageDifference, rating;""")
+
+def ProcessPendingRating():
+    cur.execute("""DELETE FROM PendingRatingFeedback RETURNING businessarea1id, businessarea2id, skillOverlap, ageDifference, rating;""")
     rows = cur.fetchall()
 
     conn.commit()
-    
+
     cur.close()
     conn.close()
     for row in rows:
