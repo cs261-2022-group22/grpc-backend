@@ -124,10 +124,16 @@ def registerMenteeImpl(userid: int, desiredSkills: list[str]):
     response = MenteeSignupReply()
     
     cur.execute("SELECT * FROM Mentee WHERE accountId = %s;", (userid,))
-    if cur.fetchone() is not None: #cannot already be a mentee if signing up
+    if cur.fetchone() is not None: #cannot already be a mentee if signing up as one
         response.status = False
-    else: #signup
-        cur.execute("INSERT INTO Mentee(accountId) VALUES(%s);", (userid,))
+    else: #signup as a mentee
+        #create a mentee profile
+        cur.execute("INSERT INTO Mentee(accountId) VALUES(%s) RETURNING menteeId;", (userid,))
+        menteeId = cur.fetchone()[0]
+        for skillName in desiredSkills: #add the target skills
+            cur.execute("SELECT skillId FROM Skill WHERE name = %s;", (skillName,))
+            skillId = cur.fetchone()[0]
+            cur.execute("INSERT INTO MenteeSkill(menteeId,skillId) VALUES(%s,%s);", (menteeId,skillId))
         response.status = True
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)

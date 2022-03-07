@@ -73,6 +73,11 @@ function main() {
         (err, response) => {
             console.log("GetNotifications:", err ? "An error has occurred" : response);
         });
+
+    client.RegisterMentee({ userid: 1, desiredSkills: ["Technical", "Management"] }, 
+    (err, response) => {
+        console.log("RegisterMentee:", err ? "An error has occurred" : response);
+    });
 }
 
 main();
