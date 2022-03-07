@@ -1,12 +1,14 @@
 from datetime import datetime
 from logging import error
+import string
 
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              ListBusinessAreasReply, ProfileType,
                                              ProfilesReply, RegistrationReply, 
-                                             NotificationsReply)
+                                             NotificationsReply, 
+                                             MenteeSignupReply)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
@@ -112,6 +114,21 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
     notificationResults = cur.fetchall()
     for notificationResult in notificationResults:
         response.desired_notifications.append(notificationResult[0])
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+def registerMenteeImpl(userid: int, desiredSkills: list[str]):
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    response = MenteeSignupReply()
+    
+    cur.execute("SELECT * FROM Mentee WHERE accountId = %s;", (userid,))
+    if cur.fetchone() is not None: #cannot already be a mentee if signing up
+        response.status = False
+    else: #signup
+        cur.execute("INSERT INTO Mentee(accountId) VALUES(%s);", (userid,))
+        response.status = True
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
