@@ -66,12 +66,13 @@ WHERE
 # - Justification: Machine learning allows for improvements to more accurate pairings in the future, which addresses poor matches that users receive.
 # #
 
+
 def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur):
     cur.execute(MENTEE_SKILLS_QUERY, (menteeId,))
-    #expose the skill ids into a set
+    # expose the skill ids into a set
     menteeSkills = set(map(lambda e: e[0], cur.fetchall()))
-    
-    #add the skills a mentor has to the end of their tuple
+
+    # add the skills a mentor has to the end of their tuple
     temp = []
     for mentor in mentors:
         cur.execute(MENTOR_SKILLS_QUERY, (mentor[0],))
@@ -80,27 +81,27 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
 
     mentors = temp
 
-    #determine the distinct mentor business areas
+    # determine the distinct mentor business areas
     distinctMentorBusinessAreaIds = set()
     for mentor in mentors:
-        distinctMentorBusinessAreaIds.add(mentor[2])    
+        distinctMentorBusinessAreaIds.add(mentor[2])
 
-    #create dict from the distinct mentor business areas to the models
+    # create dict from the distinct mentor business areas to the models
     modelDict = {}
     for distinctMentorBusinessAreaId in distinctMentorBusinessAreaIds:
         cur.execute(MODEL_QUERY, (menteeBusinessAreaId, distinctMentorBusinessAreaId))
         if (model := cur.fetchone()) is not None:
             modelDict[distinctMentorBusinessAreaId] = model
 
-    #mentors for which there exists a model (that corresponds to their business area)
+    # mentors for which there exists a model (that corresponds to their business area)
     known = []
 
-    #mentors for which there doesn't exist a model
+    # mentors for which there doesn't exist a model
     unknown = []
 
-    #determine for each mentor if a model exists for their business area
-    #if so add them with their predicted rating with the mentee to known
-    #otherwise just add their basic details to unknown
+    # determine for each mentor if a model exists for their business area
+    # if so add them with their predicted rating with the mentee to known
+    # otherwise just add their basic details to unknown
     for mentor in mentors:
         mentorBasicDetails = (mentor[0], mentor[1])
         if mentor[2] in modelDict:
@@ -110,13 +111,14 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
         else:
             unknown.append(mentorBasicDetails)
 
-    #prefer to select an unknown situation so that data can be collected on this in the future (with ratings)
+    # prefer to select an unknown situation so that data can be collected on this in the future (with ratings)
     if len(unknown) > 0:
         return random.choice(unknown)
-    else: #choose the expected best mentor
-        known.sort(key = lambda e: e[2], reverse = True)
-        selectedMentorWithMetric = known[0] #exclude metric as we only care about their basic details in the return
+    else:  # choose the expected best mentor
+        known.sort(key=lambda e: e[2], reverse=True)
+        selectedMentorWithMetric = known[0]  # exclude metric as we only care about their basic details in the return
         return (selectedMentorWithMetric[0], selectedMentorWithMetric[1])
+
 
 def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
     (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
@@ -149,8 +151,7 @@ def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
     response.mentor_id = mentor_id
     response.mentor_name = mentor_name
 
-    cur.execute("INSERT INTO Assignment(mentorId, menteeId) VALUES(%s, %s);", 
-    (mentor_id, menteeId))
+    cur.execute("INSERT INTO Assignment(mentorId, menteeId) VALUES(%s, %s);", (mentor_id, menteeId))
 
     matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
