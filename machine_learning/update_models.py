@@ -5,7 +5,7 @@ import re
 import psycopg
 from utils import GetConnectionString
 
-from . import dataDirPath
+from . import DataDirectory
 from .linear_regression import perform2VariableLinearRegression
 
 
@@ -20,7 +20,7 @@ def UpdateModels():
     # second business area id.
     dataFileEntries = []
 
-    for filename in os.listdir(dataDirPath):
+    for filename in os.listdir(DataDirectory):
         if (
             (dataFilenameMatch := dataFilenameFormat.match(filename)) is not None
             and (businessArea1Id := int(dataFilenameMatch.group(1))) <
@@ -28,7 +28,7 @@ def UpdateModels():
         ):
             dataFileEntries.append(
                 (
-                    os.path.join(dataDirPath, filename),
+                    os.path.join(DataDirectory, filename),
                     businessArea1Id,
                     businessArea2Id
                 )
