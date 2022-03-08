@@ -20,11 +20,11 @@ class MeetingService(MeetingServiceBase):
     async def list_plans_of_actions(self, userid: int) -> ListPlansOfActionsReply:
         return await run_in_thread(listPlansOfActionsImpl, userid)
 
-    async def toggle_plans_of_action_completion(self, userid: int, plan_id: int) -> TogglePlansOfActionCompletionReply:
-        return await run_in_thread(togglePlansOfActionCompletionImpl, userid, plan_id)
+    async def toggle_plans_of_action_completion(self, planid: int) -> TogglePlansOfActionCompletionReply:
+        return await run_in_thread(togglePlansOfActionCompletionImpl, planid)
 
-    async def create_plans_of_actions(self, plans_of_action: str) -> CreatePlansOfActionsReply:
-        return await run_in_thread(createPlansOfActionsImpl, plans_of_action)
+    async def create_plans_of_actions(self, mentee_id: int,  plans_of_action: str) -> CreatePlansOfActionsReply:
+        return await run_in_thread(createPlansOfActionsImpl, mentee_id, plans_of_action)
 
 
 async def beginServe(connectionString: str, port: int):

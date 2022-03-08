@@ -15,9 +15,14 @@ function main() {
     client.List5AppointmentsByUserID({ userid: 6, profileType: 0 },
         (err, response) => console.log("List5AppointmentsByUserID:", err ? "An error has occurred: " + err : response));
 
-
     client.ListPlansOfActions({ userid: 13 },
         (err, response) => console.log("ListPlansOfActions:", err ? "An error has occurred: " + err : response));
+
+    client.TogglePlansOfActionCompletion({ planid: 1 },
+        (err, response) => console.log("TogglePlansOfActionCompletion:", err ? "An error has occurred: " + err : response));
+
+    client.CreatePlansOfActions({ menteeId: 1, plansOfAction: "Created by JS demo client." },
+        (err, response) => console.log("CreatePlansOfActions:", err ? "An error has occurred: " + err : response));
 }
 
 main();
