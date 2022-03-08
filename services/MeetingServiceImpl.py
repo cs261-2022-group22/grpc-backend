@@ -25,19 +25,19 @@ SELECT * FROM (
         NATURAL JOIN assignment
         JOIN {AnotherPTypeStr} ON assignment.{AnotherPTypeStr}id = {AnotherPTypeStr}.{AnotherPTypeStr}id
         JOIN account ON {AnotherPTypeStr}.accountid = account.accountid
-        WHERE {PTypeStr}id = 2
+        WHERE {PTypeStr}id = %s
     UNION SELECT 1 AS atype, NULL AS another_name, link, start, duration, name AS skill_name
     FROM workshop
         NATURAL JOIN skill
         NATURAL JOIN {PTypeStr}skill
-        WHERE {PTypeStr}id = 2
+        WHERE {PTypeStr}id = %s
 ) AS T
 WHERE (start + ((duration || ' minutes')::interval)) > now()::timestamp
 ORDER BY start
 LIMIT 5;
 """
 
-    cur.execute(SELECT_PROFILE_ID, (userid,))
+    cur.execute(SELECT_PROFILE_ID, (userid, userid,))
     result = cur.fetchone()
 
     if result is None:
