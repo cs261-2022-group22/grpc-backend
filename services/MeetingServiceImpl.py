@@ -74,9 +74,34 @@ ORDER BY milestoneid;"""
     return ListPlansOfActionsReply(results)
 
 
-def togglePlansOfActionCompletionImpl(userid: int, plan_id: int) -> TogglePlansOfActionCompletionReply:
-    return TogglePlansOfActionCompletionReply()
+def togglePlansOfActionCompletionImpl(plan_id: int) -> TogglePlansOfActionCompletionReply:
+    (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
+
+    QUERY = "UPDATE milestone SET completed = NOT completed WHERE milestoneid = %s RETURNING *;"
+    cur.execute(QUERY, (plan_id,))
+
+    success = len(cur.fetchall()) > 0
+
+    meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return TogglePlansOfActionCompletionReply(success)
 
 
-def createPlansOfActionsImpl(plans_of_action: str) -> CreatePlansOfActionsReply:
-    return CreatePlansOfActionsReply()
+def createPlansOfActionsImpl(mentee_id: int, plansOfActionString: str) -> CreatePlansOfActionsReply:
+    (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
+    QUERY = "INSERT INTO milestone VALUES(DEFAULT, %s, %s, false) RETURNING *;"
+
+    cur.execute(QUERY, (mentee_id, plansOfActionString))
+    result = cur.fetchone()
+
+    success: bool = False
+    plansOfAction: PlansOfAction = None
+
+    if result is None:
+        success = False
+    else:
+        success = True
+        (mid, _, content, _) = result
+        plansOfAction = PlansOfAction(mid, content)
+
+    meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return CreatePlansOfActionsReply(success, plansOfAction)
