@@ -90,11 +90,11 @@ def togglePlansOfActionCompletionImpl(plan_id: int) -> TogglePlansOfActionComple
     return TogglePlansOfActionCompletionReply(success)
 
 
-def createPlansOfActionsImpl(mentee_id: int, plansOfActionString: str) -> CreatePlansOfActionsReply:
+def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> CreatePlansOfActionsReply:
     (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
-    QUERY = "INSERT INTO milestone VALUES(DEFAULT, %s, %s, false) RETURNING *;"
+    QUERY = "INSERT INTO milestone VALUES(DEFAULT, (SELECT menteeid FROM mentee WHERE accountid = %s), %s, false) RETURNING *;"
 
-    cur.execute(QUERY, (mentee_id, plansOfActionString))
+    cur.execute(QUERY, (mentee_user_id, plansOfActionString))
     result = cur.fetchone()
 
     success: bool = False
