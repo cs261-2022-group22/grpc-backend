@@ -10,25 +10,29 @@ meetingServiceConnectionPool = ConnectionPool()
 def list5AppointmentsByUserIdImpl(userid: int, profile_type: ProfileType) -> ListAppointmentsReply:
     (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
 
-    ProfileTypeStr = 'mentee' if profile_type == ProfileType.MENTEE else 'mentor'
-    AnotherProfileTypeStr = 'mentor' if profile_type == ProfileType.MENTEE else 'mentee'
+    PTypeStr = 'mentee' if profile_type == ProfileType.MENTEE else 'mentor'
+    AnotherPTypeStr = 'mentor' if profile_type == ProfileType.MENTEE else 'mentee'
 
-    SELECT_PROFILE_ID = f"SELECT * FROM {ProfileTypeStr} WHERE accountid = %s"
+    SELECT_PROFILE_ID = f"SELECT * FROM {PTypeStr} WHERE accountid = %s"
 
+    # Select from the union of ([Type, Another Attandance Name, Link, Start, Duration, Skill Name] of both Meetings and Workshops, for current userid)
+    # and then filter by (time + duration > now) to list the ongoing ones.
+    # then sort by start time, and take the first 5
     SELECTION_QUERY = f"""
-WITH T AS (SELECT 0 as atype, {ProfileTypeStr}id as profile_id, {AnotherProfileTypeStr}id as another_profile_id, link, start, duration, '' as skill_name
-FROM meeting
-    NATURAL JOIN assignment
-UNION SELECT 1 as atype, {ProfileTypeStr}id as profile_id, -1, link, start, duration, name as skill_name
-FROM workshop
-    NATURAL JOIN skill
-    NATURAL JOIN {ProfileTypeStr}skill
-) SELECT atype, name, link, start, duration, skill_name
-FROM T
-    LEFT JOIN {AnotherProfileTypeStr} ON T.another_profile_id = {AnotherProfileTypeStr}.{AnotherProfileTypeStr}id
-    LEFT JOIN account ON {AnotherProfileTypeStr}.accountid = account.accountid
+SELECT * FROM (
+    SELECT 0 AS atype, name AS another_name, link, start, duration, NULL AS skill_name
+    FROM meeting
+        NATURAL JOIN assignment
+        JOIN {AnotherPTypeStr} ON assignment.{AnotherPTypeStr}id = {AnotherPTypeStr}.{AnotherPTypeStr}id
+        JOIN account ON {AnotherPTypeStr}.accountid = account.accountid
+        WHERE {PTypeStr}id = 2
+    UNION SELECT 1 AS atype, NULL AS another_name, link, start, duration, name AS skill_name
+    FROM workshop
+        NATURAL JOIN skill
+        NATURAL JOIN {PTypeStr}skill
+        WHERE {PTypeStr}id = 2
+) AS T
 WHERE (start + ((duration || ' minutes')::interval)) > now()::timestamp
-    AND profile_id = %s
 ORDER BY start
 LIMIT 5;
 """
@@ -37,7 +41,7 @@ LIMIT 5;
     result = cur.fetchone()
 
     if result is None:
-        print(f"Something went wrong, provided userid {userid} is not a {ProfileTypeStr}")
+        print(f"Something went wrong, provided userid {userid} is not a {PTypeStr}")
         meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return ListAppointmentsReply()
 
