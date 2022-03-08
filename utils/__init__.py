@@ -2,6 +2,16 @@ import logging
 import os
 from dotenv import load_dotenv
 
+def GetConnectionString():
+    load_dotenv()
+
+    DBName = os.getenv("POSTGRES_DATABASE", "mentoring")
+    DBUser = os.getenv("POSTGRES_USER", "")
+    DBPassword = os.getenv("POSTGRES_PASSWORD", "")
+    DBHost = os.getenv("POSTGRES_HOST", "localhost")
+    DBPort = os.getenv("POSTGRES_PORT", "")
+
+    return f'dbname={DBName} user={DBUser} password={DBPassword} host={DBHost} port={DBPort}'
 
 def InitService(port_env_name: str):
     load_dotenv()
@@ -12,11 +22,5 @@ def InitService(port_env_name: str):
         print("Invalid port number:", port)
         exit(1)
 
-    DBName = os.getenv("POSTGRES_DATABASE", "mentoring")
-    DBUser = os.getenv("POSTGRES_USER", "")
-    DBPassword = os.getenv("POSTGRES_PASSWORD", "")
-    DBHost = os.getenv("POSTGRES_HOST", "localhost")
-    DBPort = os.getenv("POSTGRES_PORT", "")
-
-    ConnectionString = f'dbname={DBName} user={DBUser} password={DBPassword} host={DBHost} port={DBPort}'
+    ConnectionString = GetConnectionString()
     return port, ConnectionString
