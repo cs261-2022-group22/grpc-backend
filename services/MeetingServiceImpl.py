@@ -37,7 +37,7 @@ ORDER BY start
 LIMIT 5;
 """
 
-    cur.execute(SELECT_PROFILE_ID, (userid, userid,))
+    cur.execute(SELECT_PROFILE_ID, (userid,))
     result = cur.fetchone()
 
     if result is None:
@@ -46,7 +46,7 @@ LIMIT 5;
         return ListAppointmentsReply()
 
     profileId = result[0]
-    cur.execute(SELECTION_QUERY, (profileId,))
+    cur.execute(SELECTION_QUERY, (profileId, profileId,))
 
     appointments = []
 
