@@ -67,17 +67,17 @@ function main() {
             }
         });
 
-    client.ListBusinessAreas({}, (err, resp) => console.log("ListBusinessAreas:", err ? "An error has occurred" : resp))
+    client.ListBusinessAreas({},
+        (err, resp) => console.log("ListBusinessAreas:", err ? "An error has occurred" : resp))
 
     client.GetNotifications({ userid: 1, targetProfileType: "MENTOR" },
-        (err, response) => {
-            console.log("GetNotifications:", err ? "An error has occurred" : response);
-        });
+        (err, response) => console.log("GetNotifications:", err ? "An error has occurred" : response));
 
-    client.RegisterMentee({ userid: 1, desiredSkills: ["Technical", "Management"] }, 
-    (err, response) => {
-        console.log("RegisterMentee:", err ? "An error has occurred" : response);
-    });
+    client.RegisterMentee({ userid: 1, desiredSkills: ["Technical", "Management"] },
+        (err, response) => console.log("RegisterMentee:", err ? "An error has occurred" : response));
+
+    client.GetMenteesByMentorId({ mentorUserId: 43 },
+        (err, response) => console.log("GetMenteesByMentorId:", err ? "An error has occurred" : response));
 }
 
 main();

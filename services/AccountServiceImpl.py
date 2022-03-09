@@ -5,8 +5,9 @@ from logging import error
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
+                                             GetMenteesReply,
                                              ListBusinessAreasReply,
-                                             ListSkillsReply,
+                                             ListSkillsReply, Mentee,
                                              MenteeSignupReply,
                                              NotificationsReply, ProfilesReply,
                                              ProfileType, RegistrationReply,
@@ -125,7 +126,11 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
 
     response = NotificationsReply()
     cur.execute(f"SELECT {profileTableIdName} FROM {profileTableName} WHERE accountid = %s;", (userid,))
-    profileId = cur.fetchone()[0]
+    result = cur.fetchone()
+    if result is None:
+        return response
+
+    profileId = [0]
 
     cur.execute(f"SELECT message FROM {profileMessagesTableName} WHERE {profileTableIdName} = %s;", (profileId,))
     notificationResults = cur.fetchall()
@@ -156,3 +161,23 @@ def registerMenteeImpl(userid: int, desiredSkills: list[str]):
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
+
+
+def getMenteesByMentorIdImpl(mentor_user_id: int) -> GetMenteesReply:
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    QUERY_STRING = """
+WITH mentorId AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
+SELECT assignment.menteeid, name FROM assignment
+    NATURAL INNER JOIN mentorid
+    JOIN mentee on assignment.menteeid = mentee.menteeid
+    JOIN account a on mentee.accountid = a.accountid;
+"""
+    cur.execute(QUERY_STRING, (mentor_user_id,))
+
+    response = []
+    for result in cur.fetchall():
+        response.append(Mentee(result[0], result[1]))
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return GetMenteesReply(response)
