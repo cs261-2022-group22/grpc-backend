@@ -2,6 +2,7 @@ import datetime
 
 from compiled_protos.account_package import (AccountServiceBase,
                                              AuthenticateReply,
+                                             GetMenteesReply,
                                              ListBusinessAreasReply,
                                              ListSkillsReply,
                                              MenteeSignupReply,
@@ -12,6 +13,7 @@ from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
 from services.AccountServiceImpl import (accountProfilesImpl,
                                          accountServiceConnectionPool,
+                                         getMenteesByMentorIdImpl,
                                          getNotificationsImpl,
                                          listBusinessAreasImpl, listSkillsImpl,
                                          registerMenteeImpl, registerUserImpl,
@@ -41,6 +43,9 @@ class AccountService(AccountServiceBase):
 
     async def list_skills(self) -> ListSkillsReply:
         return await run_in_thread(listSkillsImpl)
+
+    async def get_mentees_by_mentor_id(self, mentor_user_id: int) -> GetMenteesReply:
+        return await run_in_thread(getMenteesByMentorIdImpl, mentor_user_id)
 
 
 async def beginServe(connectionString: str, port: int):
