@@ -11,22 +11,22 @@ def list5AppointmentsByUserIdImpl(userid: int, profile_type: ProfileType) -> Lis
     (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
 
     PTypeStr = 'mentee' if profile_type == ProfileType.MENTEE else 'mentor'
-    AnotherPTypeStr = 'mentor' if profile_type == ProfileType.MENTEE else 'mentee'
+    OtherPTypeStr = 'mentor' if profile_type == ProfileType.MENTEE else 'mentee'
 
     SELECT_PROFILE_ID = f"SELECT * FROM {PTypeStr} WHERE accountid = %s"
 
-    # Select from the union of ([Type, Another Attandance Name, Link, Start, Duration, Skill Name] of both Meetings and Workshops, for current userid)
+    # Select from the union of ([Type, Other Attandance Name, Link, Start, Duration, Skill Name] of both Meetings and Workshops, for current userid)
     # and then filter by (time + duration > now) to list the ongoing ones.
     # then sort by start time, and take the first 5
     SELECTION_QUERY = f"""
 SELECT * FROM (
-    SELECT 0 AS atype, name AS another_name, link, start, duration, NULL AS skill_name
+    SELECT 0 AS atype, name AS other_name, link, start, duration, NULL AS skill_name
     FROM meeting
         NATURAL JOIN assignment
-        JOIN {AnotherPTypeStr} ON assignment.{AnotherPTypeStr}id = {AnotherPTypeStr}.{AnotherPTypeStr}id
-        JOIN account ON {AnotherPTypeStr}.accountid = account.accountid
+        JOIN {OtherPTypeStr} ON assignment.{OtherPTypeStr}id = {OtherPTypeStr}.{OtherPTypeStr}id
+        JOIN account ON {OtherPTypeStr}.accountid = account.accountid
         WHERE {PTypeStr}id = %s
-    UNION SELECT 1 AS atype, NULL AS another_name, link, start, duration, name AS skill_name
+    UNION SELECT 1 AS atype, NULL AS other_name, link, start, duration, name AS skill_name
     FROM workshop
         NATURAL JOIN skill
         NATURAL JOIN {PTypeStr}skill
@@ -92,7 +92,7 @@ def togglePlansOfActionCompletionImpl(plan_id: int) -> TogglePlansOfActionComple
 
 def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> CreatePlansOfActionsReply:
     (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
-    QUERY = "INSERT INTO milestone VALUES(DEFAULT, (SELECT menteeid FROM mentee WHERE accountid = %s), %s, false) RETURNING *;"
+    QUERY = "INSERT INTO milestone VALUES(DEFAULT, (SELECT menteeid FROM mentee WHERE accountid = %s), %s, false) RETURNING milestoneId, content;"
 
     cur.execute(QUERY, (mentee_user_id, plansOfActionString))
     result = cur.fetchone()
@@ -100,11 +100,9 @@ def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> C
     success: bool = False
     plansOfAction: PlansOfAction = None
 
-    if result is None:
-        success = False
-    else:
+    if result is not None:
         success = True
-        (mid, _, content, _) = result
+        (mid, content) = result
         plansOfAction = PlansOfAction(mid, content)
 
     meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
