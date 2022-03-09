@@ -128,6 +128,7 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
     cur.execute(f"SELECT {profileTableIdName} FROM {profileTableName} WHERE accountid = %s;", (userid,))
     result = cur.fetchone()
     if result is None:
+        accountServiceConnectionPool.release_to_connection_pool(conn, cur)
         return response
 
     profileId = [0]
@@ -167,9 +168,9 @@ def getMenteesByMentorIdImpl(mentor_user_id: int) -> GetMenteesReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
     QUERY_STRING = """
-WITH mentorId AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
+WITH mentorIdResult AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
 SELECT assignment.menteeid, name FROM assignment
-    NATURAL INNER JOIN mentorid
+    NATURAL INNER JOIN mentorIdResult
     JOIN mentee on assignment.menteeid = mentee.menteeid
     JOIN account a on mentee.accountid = a.accountid;
 """
