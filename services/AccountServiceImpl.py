@@ -131,7 +131,7 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
         accountServiceConnectionPool.release_to_connection_pool(conn, cur)
         return response
 
-    profileId = [0]
+    profileId = result[0]
 
     cur.execute(f"SELECT message FROM {profileMessagesTableName} WHERE {profileTableIdName} = %s;", (profileId,))
     notificationResults = cur.fetchall()
