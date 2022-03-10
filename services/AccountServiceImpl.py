@@ -169,7 +169,7 @@ def getMenteesByMentorIdImpl(mentor_user_id: int) -> GetMenteesReply:
 
     QUERY_STRING = """
 WITH mentorIdResult AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
-SELECT assignment.menteeid, name FROM assignment
+SELECT mentee.accountid, name FROM assignment
     NATURAL INNER JOIN mentorIdResult
     JOIN mentee on assignment.menteeid = mentee.menteeid
     JOIN account a on mentee.accountid = a.accountid;
