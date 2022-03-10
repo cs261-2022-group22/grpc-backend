@@ -128,22 +128,26 @@ def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
     result = cur.fetchone()
     if result is None:
         print("Error: No such mentee:", menteeId)
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return GetMatchingMentorReply()
 
     (menteeDob, _, menteeBusinessAreaId, assignments_count) = result
 
     if assignments_count > 1:
         print("FATAL DATABASE ERROR: REQUIREMENT 'C3.2' BROKEN")
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return GetMatchingMentorReply()
 
     if assignments_count == 1:
         print("Error: Trying to match mentor for one who has one mentor assigned already.")
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return GetMatchingMentorReply()
 
     # Step 2: RANDOMLY choose a mentor on this
     cur.execute(SELECT_MENTOR_BASED_ON_MATCHING_BUSINESS_SECTOR, (menteeBusinessAreaId,))
     mentors = cur.fetchall()
     if len(mentors) == 0:
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return GetMatchingMentorReply()
 
     response = GetMatchingMentorReply()
