@@ -73,11 +73,14 @@ function main() {
     client.GetNotifications({ userid: 8, targetProfileType: "MENTOR" },
         (err, response) => console.log("GetNotifications:", err ? "An error has occurred" : response));
 
-    client.RegisterMentee({ userid: 1, desiredSkills: ["Technical", "Management"] },
+    client.RegisterMentee({ userid: 14, desiredSkills: ["How To Progress Career", "Leadership"] },
         (err, response) => console.log("RegisterMentee:", err ? "An error has occurred" : response));
 
     client.GetMenteesByMentorId({ mentorUserId: 43 },
         (err, response) => console.log("GetMenteesByMentorId:", err ? "An error has occurred" : response));
+
+    client.RegisterMentor({ userid: 1, desiredSkills: ["Technical", "Management"] },
+        (err, response) => console.log("RegisterMentor:", err ? "An error has occurred" : response));
 }
 
 main();
