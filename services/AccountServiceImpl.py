@@ -141,22 +141,23 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
     return response
 
 
-def registerMenteeImpl(userid: int, desiredSkills: list[str]):
+def registerProfileImpl(userid: int, desiredSkills: list[str], profileTableName: str):
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
+    profileTableIdName = profileTableName.lower() + "Id"
     response = ProfileSignupReply()
 
-    cur.execute("SELECT * FROM Mentee WHERE accountId = %s;", (userid,))
-    if cur.fetchone() is not None:  # cannot already be a mentee if signing up as one
+    cur.execute(f"SELECT * FROM {profileTableName} WHERE accountId = %s;", (userid,))
+    if cur.fetchone() is not None:  # cannot have two profiles of the same type
         response.status = False
-    else:  # signup as a mentee
-        # create a mentee profile
-        cur.execute("INSERT INTO Mentee(accountId) VALUES(%s) RETURNING menteeId;", (userid,))
-        menteeId = cur.fetchone()[0]
-        for skillName in desiredSkills:  # add the target skills
+    else:  # signup a profile
+        # create the profile
+        cur.execute(f"INSERT INTO {profileTableName}(accountId) VALUES(%s) RETURNING {profileTableIdName};", (userid,))
+        profileId = cur.fetchone()[0]
+        for skillName in desiredSkills:  # add the desired skills
             cur.execute("SELECT skillId FROM Skill WHERE name = %s;", (skillName,))
             skillId = cur.fetchone()[0]
-            cur.execute("INSERT INTO MenteeSkill(menteeId,skillId) VALUES(%s,%s);", (menteeId, skillId))
+            cur.execute(f"INSERT INTO {profileTableName}Skill({profileTableIdName},skillId) VALUES(%s,%s);", (profileId, skillId))
         response.status = True
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)

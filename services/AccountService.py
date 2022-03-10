@@ -16,7 +16,7 @@ from services.AccountServiceImpl import (accountProfilesImpl,
                                          getMenteesByMentorIdImpl,
                                          getNotificationsImpl,
                                          listBusinessAreasImpl, listSkillsImpl,
-                                         registerMenteeImpl, registerUserImpl,
+                                         registerProfileImpl, registerUserImpl,
                                          tryLoginImpl)
 
 gRPCServer: Server
@@ -39,13 +39,16 @@ class AccountService(AccountServiceBase):
         return await run_in_thread(getNotificationsImpl, userid, target_profile_type)
 
     async def register_mentee(self, userid: int, desired_skills: list[str]) -> ProfileSignupReply:
-        return await run_in_thread(registerMenteeImpl, userid, desired_skills)
+        return await run_in_thread(registerProfileImpl, userid, desired_skills, "Mentee")
 
     async def list_skills(self) -> ListSkillsReply:
         return await run_in_thread(listSkillsImpl)
 
     async def get_mentees_by_mentor_id(self, mentor_user_id: int) -> GetMenteesReply:
         return await run_in_thread(getMenteesByMentorIdImpl, mentor_user_id)
+
+    async def register_mentor(self, userid: int, desired_skills: list[str]) -> ProfileSignupReply:
+        return await run_in_thread(registerProfileImpl, userid, desired_skills, "Mentor")
 
 
 async def beginServe(connectionString: str, port: int):
