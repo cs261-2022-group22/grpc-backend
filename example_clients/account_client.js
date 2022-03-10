@@ -81,6 +81,9 @@ function main() {
 
     client.RegisterMentor({ userid: 1, desiredSkills: ["Technical", "Management"] },
         (err, response) => console.log("RegisterMentor:", err ? "An error has occurred" : response));
+
+    client.UpdateProfileDetails({ userid: 1, profileType: 1, newEmail: undefined, newBSId: 2, skills: [1, 2, 3] },
+        (err, response) => console.log("UpdateProfileDetailsImpl:", err ? "An error has occurred" : response));
 }
 
 main();

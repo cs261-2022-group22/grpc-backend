@@ -1,6 +1,7 @@
 import string
 from datetime import datetime
 from logging import error
+from typing import List, Optional
 
 import bcrypt
 import psycopg
@@ -10,7 +11,8 @@ from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              ListSkillsReply, Mentee,
                                              NotificationsReply, ProfileSignupReply, ProfilesReply,
                                              ProfileType, RegistrationReply,
-                                             Skill)
+                                             Skill,
+                                             UpdateProfileDetailsResponse)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
@@ -182,3 +184,12 @@ SELECT mentee.accountid, name FROM assignment
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return GetMenteesReply(response)
+
+
+def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: Optional[str], new_bs_id: Optional[int], skills: Optional[List[int]]) -> UpdateProfileDetailsResponse:
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    print(f"UpdateProfileDetailsImpl: user: {userid}, type: {profile_type}, email: {new_email}, newbs: {new_bs_id}, skills: {skills}")
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return UpdateProfileDetailsResponse(True)

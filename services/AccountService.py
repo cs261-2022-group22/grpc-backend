@@ -1,4 +1,5 @@
 import datetime
+from typing import List, Optional
 
 from compiled_protos.account_package import (AccountServiceBase,
                                              AuthenticateReply,
@@ -7,7 +8,8 @@ from compiled_protos.account_package import (AccountServiceBase,
                                              ListSkillsReply,
                                              NotificationsReply,
                                              ProfileSignupReply, ProfilesReply,
-                                             ProfileType, RegistrationReply)
+                                             ProfileType, RegistrationReply,
+                                             UpdateProfileDetailsResponse)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
@@ -17,7 +19,8 @@ from services.AccountServiceImpl import (accountProfilesImpl,
                                          getNotificationsImpl,
                                          listBusinessAreasImpl, listSkillsImpl,
                                          registerProfileImpl, registerUserImpl,
-                                         tryLoginImpl)
+                                         tryLoginImpl,
+                                         updateProfileDetailsImpl)
 
 gRPCServer: Server
 
@@ -49,6 +52,9 @@ class AccountService(AccountServiceBase):
 
     async def register_mentor(self, userid: int, desired_skills: list[str]) -> ProfileSignupReply:
         return await run_in_thread(registerProfileImpl, userid, desired_skills, "Mentor")
+
+    async def update_profile_details(self, userid: int, profile_type: ProfileType, new_email: Optional[str], new_bs_id: Optional[int], skills: Optional[List[int]]) -> UpdateProfileDetailsResponse:
+        return await run_in_thread(updateProfileDetailsImpl, userid, profile_type, new_email, new_bs_id, skills)
 
 
 async def beginServe(connectionString: str, port: int):
