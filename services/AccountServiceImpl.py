@@ -191,5 +191,34 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
 
     print(f"UpdateProfileDetailsImpl: user: {userid}, type: {profile_type}, email: {new_email}, newbs: {new_bs_id}, skills: {skills}")
 
+    success = False
+
+    try:
+        if new_email is not None:
+            print(f" -> Updating email address for user {userid}")
+            cur.execute("UPDATE account SET email = '%s' WHERE accountid = %s;", (new_email, userid))
+
+        if new_bs_id is not None:
+            print(f" -> Updating Business Area for user {userid}")
+            cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
+
+        if skills is not None:
+            profileTypeStr = "mentee" if profile_type == ProfileType.MENTEE else "mentor"
+
+            # Assumed given user id is valid
+            cur.execute(f"SELECT {profileTypeStr}id FROM {profileTypeStr} WHERE accountid = %s;", (userid,))
+            profileId = cur.fetchall()[0]
+
+            cur.execute(f"DELETE FROM {profileTypeStr}skill WHERE {profileTypeStr}id = %s;", (profileId,))
+
+            print(f" -> Updating Skills for user {userid}")
+            for newSkill in skills:
+                cur.execute(f"INSERT INTO {profileTypeStr}skill VALUES (DEFAULT, %s, %s);", (profileId, newSkill))
+
+        success = True
+    except Exception as e:
+        print(e)
+        conn.rollback()
+
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
-    return UpdateProfileDetailsResponse(True)
+    return UpdateProfileDetailsResponse(success)
