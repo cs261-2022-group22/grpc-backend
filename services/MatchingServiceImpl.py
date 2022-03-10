@@ -1,8 +1,16 @@
 import random
-from compiled_protos.matching_package import GetMatchingMentorReply
+from compiled_protos.matching_package import MenteeToMentorMatchingReply
 from utils.connection_pool import ConnectionPool
 
 matchingServiceConnectionPool = ConnectionPool()
+
+MATCHED_MENTOR_QUERY = """
+SELECT Account.accountId, Account.name 
+FROM Assignment
+    NATURAL JOIN Mentor 
+    NATURAL JOIN Account 
+WHERE Assignment.menteeId = %s;
+"""
 
 MODEL_QUERY = """
 SELECT skillOverlapCoefficient, ageDifferenceCoefficient, ModelOffset 
@@ -35,7 +43,7 @@ GROUP BY dob, accountid, businesssectorid;
 """
 
 # TODO: Better matching, based on DoB, feedback metrics, skills
-SELECT_MENTOR_BASED_ON_MATCHING_BUSINESS_SECTOR = """
+SELECT_MENTOR_BASED_ON_DIFFERENT_BUSINESS_SECTOR = """
 WITH mentor_assignment_count AS (
     SELECT mentorid, COUNT(mentorid) as assignment_count
     FROM mentor
@@ -120,8 +128,41 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
         return (selectedMentorWithMetric[0], selectedMentorWithMetric[1])
 
 
-def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
+def getMatchingMentorImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
     (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
+
+    response = MenteeToMentorMatchingReply()
+    response.status = False #failure-biased
+
+    #retrieve mentee id
+    cur.execute("SELECT menteeId FROM Mentee WHERE accountId = %s;", (menteeUserId,))
+    menteeId = cur.fetchone()[0]
+
+    #find the user id and name of the mentor they are matched to
+    cur.execute(MATCHED_MENTOR_QUERY, (menteeId,))
+    matchedMentorDetails = cur.fetchone()
+    if matchedMentorDetails is None:
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
+        return response
+        
+    (mentor_user_id, mentor_name) = matchedMentorDetails
+    response.mentor_user_id = mentor_user_id
+    response.mentor_name = mentor_name
+    response.status = True
+
+    matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+
+def tryMatchImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
+    (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
+    
+    response = MenteeToMentorMatchingReply()
+    response.status = False #failure-biased
+
+    # Step 0: Get the mentee id from the given user id
+    cur.execute("SELECT menteeId FROM Mentee WHERE accountId = %s;", (menteeUserId,))
+    menteeId = cur.fetchone()[0]
 
     # Step 1: Figure out the businessArea of current mentee
     cur.execute(MENTEE_INFO_QUERY_STRING, (menteeId,))
@@ -129,31 +170,36 @@ def getMatchingMentorImpl(menteeId: int) -> GetMatchingMentorReply:
     if result is None:
         print("Error: No such mentee:", menteeId)
         matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
-        return GetMatchingMentorReply()
+        return response
 
     (menteeDob, _, menteeBusinessAreaId, assignments_count) = result
 
     if assignments_count > 1:
         print("FATAL DATABASE ERROR: REQUIREMENT 'C3.2' BROKEN")
         matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
-        return GetMatchingMentorReply()
+        return response
 
     if assignments_count == 1:
         print("Error: Trying to match mentor for one who has one mentor assigned already.")
         matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
-        return GetMatchingMentorReply()
+        return response
 
-    # Step 2: RANDOMLY choose a mentor on this
-    cur.execute(SELECT_MENTOR_BASED_ON_MATCHING_BUSINESS_SECTOR, (menteeBusinessAreaId,))
+    # Step 2: Choose a mentor in a different one using the models. 
+    cur.execute(SELECT_MENTOR_BASED_ON_DIFFERENT_BUSINESS_SECTOR, (menteeBusinessAreaId,))
     mentors = cur.fetchall()
     if len(mentors) == 0:
         matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
-        return GetMatchingMentorReply()
+        return response
 
-    response = GetMatchingMentorReply()
     (mentor_id, mentor_name) = selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
-    response.mentor_id = mentor_id
+
+    # Step 3: Determine the user id of the mentor. 
+    cur.execute("SELECT accountId FROM Mentor WHERE mentorId = %s;", (mentor_id,))
+    mentor_user_id = cur.fetchone()[0]
+
+    response.mentor_user_id = mentor_user_id
     response.mentor_name = mentor_name
+    response.status = True
 
     cur.execute("INSERT INTO Assignment(mentorId, menteeId) VALUES(%s, %s);", (mentor_id, menteeId))
 
