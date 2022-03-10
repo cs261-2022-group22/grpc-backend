@@ -196,7 +196,7 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
     try:
         if new_email is not None:
             print(f" -> Updating email address for user {userid}")
-            cur.execute("UPDATE account SET email = '%s' WHERE accountid = %s;", (new_email, userid))
+            cur.execute("UPDATE account SET email = %s WHERE accountid = %s;", (new_email, userid))
 
         if new_bs_id is not None:
             print(f" -> Updating Business Area for user {userid}")
@@ -207,7 +207,7 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
 
             # Assumed given user id is valid
             cur.execute(f"SELECT {profileTypeStr}id FROM {profileTypeStr} WHERE accountid = %s;", (userid,))
-            profileId = cur.fetchall()[0]
+            profileId = cur.fetchone()[0]
 
             cur.execute(f"DELETE FROM {profileTypeStr}skill WHERE {profileTypeStr}id = %s;", (profileId,))
 
