@@ -5,8 +5,8 @@ from compiled_protos.account_package import (AccountServiceBase,
                                              GetMenteesReply,
                                              ListBusinessAreasReply,
                                              ListSkillsReply,
-                                             MenteeSignupReply,
-                                             NotificationsReply, ProfilesReply,
+                                             NotificationsReply,
+                                             ProfileSignupReply, ProfilesReply,
                                              ProfileType, RegistrationReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
@@ -38,7 +38,7 @@ class AccountService(AccountServiceBase):
     async def get_notifications(self, userid: int, target_profile_type: ProfileType) -> NotificationsReply:
         return await run_in_thread(getNotificationsImpl, userid, target_profile_type)
 
-    async def register_mentee(self, userid: int, desired_skills: list[str]) -> MenteeSignupReply:
+    async def register_mentee(self, userid: int, desired_skills: list[str]) -> ProfileSignupReply:
         return await run_in_thread(registerMenteeImpl, userid, desired_skills)
 
     async def list_skills(self) -> ListSkillsReply:

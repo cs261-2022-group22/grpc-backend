@@ -8,8 +8,7 @@ from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              GetMenteesReply,
                                              ListBusinessAreasReply,
                                              ListSkillsReply, Mentee,
-                                             MenteeSignupReply,
-                                             NotificationsReply, ProfilesReply,
+                                             NotificationsReply, ProfileSignupReply, ProfilesReply,
                                              ProfileType, RegistrationReply,
                                              Skill)
 from utils.connection_pool import ConnectionPool
@@ -145,7 +144,7 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
 def registerMenteeImpl(userid: int, desiredSkills: list[str]):
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
-    response = MenteeSignupReply()
+    response = ProfileSignupReply()
 
     cur.execute("SELECT * FROM Mentee WHERE accountId = %s;", (userid,))
     if cur.fetchone() is not None:  # cannot already be a mentee if signing up as one
