@@ -1,17 +1,20 @@
+import string
 from datetime import datetime
 from logging import error
-import string
 
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
-                                             ListBusinessAreasReply, ProfileType,
-                                             ProfilesReply, RegistrationReply, 
-                                             NotificationsReply, 
-                                             MenteeSignupReply)
+                                             ListBusinessAreasReply,
+                                             ListSkillsReply,
+                                             MenteeSignupReply,
+                                             NotificationsReply, ProfilesReply,
+                                             ProfileType, RegistrationReply,
+                                             Skill)
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
+
 
 def tryLoginImpl(username: str, password: str) -> AuthenticateReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
@@ -99,6 +102,20 @@ def listBusinessAreasImpl() -> ListBusinessAreasReply:
     return response
 
 
+def listSkillsImpl() -> ListSkillsReply:
+    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
+
+    response = ListSkillsReply()
+    cur.execute("SELECT * FROM skill;")
+    results = cur.fetchall()
+
+    for result in results:
+        response.skills.append(Skill(result[0], result[1]))
+
+    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+
 def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> NotificationsReply:
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
@@ -118,22 +135,23 @@ def getNotificationsImpl(userid: int, targetProfileType: ProfileType) -> Notific
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
 
+
 def registerMenteeImpl(userid: int, desiredSkills: list[str]):
     (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
 
     response = MenteeSignupReply()
-    
+
     cur.execute("SELECT * FROM Mentee WHERE accountId = %s;", (userid,))
-    if cur.fetchone() is not None: #cannot already be a mentee if signing up as one
+    if cur.fetchone() is not None:  # cannot already be a mentee if signing up as one
         response.status = False
-    else: #signup as a mentee
-        #create a mentee profile
+    else:  # signup as a mentee
+        # create a mentee profile
         cur.execute("INSERT INTO Mentee(accountId) VALUES(%s) RETURNING menteeId;", (userid,))
         menteeId = cur.fetchone()[0]
-        for skillName in desiredSkills: #add the target skills
+        for skillName in desiredSkills:  # add the target skills
             cur.execute("SELECT skillId FROM Skill WHERE name = %s;", (skillName,))
             skillId = cur.fetchone()[0]
-            cur.execute("INSERT INTO MenteeSkill(menteeId,skillId) VALUES(%s,%s);", (menteeId,skillId))
+            cur.execute("INSERT INTO MenteeSkill(menteeId,skillId) VALUES(%s,%s);", (menteeId, skillId))
         response.status = True
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)

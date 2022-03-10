@@ -2,19 +2,20 @@ import datetime
 
 from compiled_protos.account_package import (AccountServiceBase,
                                              AuthenticateReply,
-                                             ListBusinessAreasReply, ProfileType,
-                                             ProfilesReply, RegistrationReply, 
-                                             NotificationsReply, 
-                                             MenteeSignupReply)
+                                             ListBusinessAreasReply,
+                                             ListSkillsReply,
+                                             MenteeSignupReply,
+                                             NotificationsReply, ProfilesReply,
+                                             ProfileType, RegistrationReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
-from services.AccountServiceImpl import (accountProfilesImpl, 
-                                         listBusinessAreasImpl,
-                                         registerUserImpl, tryLoginImpl, 
-                                         getNotificationsImpl, 
-                                         registerMenteeImpl, 
-                                         accountServiceConnectionPool)
+from services.AccountServiceImpl import (accountProfilesImpl,
+                                         accountServiceConnectionPool,
+                                         getNotificationsImpl,
+                                         listBusinessAreasImpl, listSkillsImpl,
+                                         registerMenteeImpl, registerUserImpl,
+                                         tryLoginImpl)
 
 gRPCServer: Server
 
@@ -37,7 +38,10 @@ class AccountService(AccountServiceBase):
 
     async def register_mentee(self, userid: int, desired_skills: list[str]) -> MenteeSignupReply:
         return await run_in_thread(registerMenteeImpl, userid, desired_skills)
-        
+
+    async def list_skills(self) -> ListSkillsReply:
+        return await run_in_thread(listSkillsImpl)
+
 
 async def beginServe(connectionString: str, port: int):
     accountServiceConnectionPool.initialise_connection_pool(connectionString)
