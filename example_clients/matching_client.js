@@ -12,8 +12,11 @@ function main() {
 
     var client = new matching_proto.MatchingService(SERVER_ADDRESS, grpc.credentials.createInsecure());
 
-    client.GetMatchingMentor({ menteeId: 1 },
+    client.GetMatchingMentor({ menteeUserId: 72 },
         (err, response) => console.log("GetMatchingMentor:", err ? "An error has occurred: " + err : response));
+    
+    client.TryMatch({ menteeUserId: 41 }, 
+        (err, response) => console.log("TryMatch:", err ? "An error has occurred: " + err : response));
 }
 
 main();

@@ -1,15 +1,19 @@
 from compiled_protos.matching_package import (MatchingServiceBase,
-                                              GetMatchingMentorReply)
+                                              MenteeToMentorMatchingReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
 from services.MatchingServiceImpl import (getMatchingMentorImpl,
-                                          matchingServiceConnectionPool)
+                                          matchingServiceConnectionPool, 
+                                          tryMatchImpl)
 
 
 class MatchingService(MatchingServiceBase):
-    async def get_matching_mentor(self, mentee_id: int) -> GetMatchingMentorReply:
-        return await run_in_thread(getMatchingMentorImpl, mentee_id)
+    async def try_match(self, mentee_user_id: int) -> MenteeToMentorMatchingReply:
+        return await run_in_thread(tryMatchImpl, mentee_user_id)
+
+    async def get_matching_mentor(self, mentee_user_id: int) -> MenteeToMentorMatchingReply:
+        return await run_in_thread(getMatchingMentorImpl, mentee_user_id)
 
 
 async def beginServe(connectionString: str, port: int):
