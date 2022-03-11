@@ -72,6 +72,12 @@ def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float)
     (mentorId, menteeId))
     assignmentId = cur.fetchone()[0]
 
+    # CHECK: Only 1 piece of feedback on the mentor permitted per matching
+    cur.execute("SELECT mentorFeedbackId FROM MentorFeedback WHERE assignmentId = %s;", (assignmentId,))
+    if cur.fetchone() is not None: #feedback already present so not allowed more
+        feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
+        return response
+
     # Step 3: add the feedback to the main system.
     cur.execute("INSERT INTO MentorFeedback(assignmentId, rating) VALUES(%s,%s);", 
     (assignmentId, rating))
