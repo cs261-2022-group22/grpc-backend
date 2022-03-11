@@ -12,8 +12,8 @@ function main() {
 
     var client = new feedback_proto.FeedbackService(SERVER_ADDRESS, grpc.credentials.createInsecure());
 
-    client.GetMatchingMentor({ menteeUserId: 72 },
-        (err, response) => console.log("GetMatchingMentor:", err ? "An error has occurred: " + err : response));
+    client.AddFeedbackOnMentor({ mentorUserId: 9, menteeUserId: 28, rating: 3.8 },
+        (err, response) => console.log("AddFeedbackOnMentor:", err ? "An error has occurred: " + err : response));
 }
 
 main();
