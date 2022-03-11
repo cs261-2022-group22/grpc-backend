@@ -9,12 +9,14 @@ from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              GetMenteesReply,
                                              ListBusinessAreasReply,
                                              ListSkillsReply, Mentee,
-                                             NotificationsReply, ProfileSignupReply, ProfilesReply,
+                                             NotificationsReply,
+                                             ProfileSignupReply, ProfilesReply,
                                              ProfileType, RegistrationReply,
                                              Skill,
                                              UpdateProfileDetailsResponse)
-from services.MatchingServiceImpl import tryMatchImpl
 from utils.connection_pool import ConnectionPool
+
+from services.MatchingServiceImpl import tryMatchImpl, tryMatchImplImpl
 
 accountServiceConnectionPool = ConnectionPool()
 
@@ -264,7 +266,7 @@ AND account.businesssectorid = %s;      -- Business Area ID to be changed to, us
 
         # Step 3 - If we are the mentor, try reassigning these mentees
         if profileName == "mentor":
-            result = tryMatchImpl(accountServiceConnectionPool, affectedAccountId)
+            result = tryMatchImplImpl(accountServiceConnectionPool, affectedAccountId)
             if result.status:
                 # Successfully assigned one
                 MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
@@ -274,16 +276,18 @@ AND account.businesssectorid = %s;      -- Business Area ID to be changed to, us
         # Step 3 - Send notifications to this user:
         cur.execute(f"INSERT INTO {otherProfileName}message VALUES(DEFAULT, %s, %s);", (affectedProfileId, MESSAGE))
 
-    SELF_MESSAGE = f"""Hello, you have changed your business area, as a result, you have been unassigned with {len(affectedProfiles)} {otherProfileName}(s)."""
+    # Only send messages of there are affected profiles
+    if len(affectedProfiles) > 0:
+        SELF_MESSAGE = f"""Hello, you have changed your business area, as a result, you have been unassigned with {len(affectedProfiles)} {otherProfileName}(s)."""
 
-    # If we are the mentee, try reassigning a new mentor
-    if profileName == "mentee":
-        result = tryMatchImpl(accountServiceConnectionPool, userid)
-        if result.status:
-            # Successfully assigned one
-            SELF_MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
-        else:
-            SELF_MESSAGE += f"""\nBut we failed to assign a new mentor for you automatically. :("""
+        # If we are the mentee, try reassigning a new mentor
+        if profileName == "mentee":
+            result = tryMatchImplImpl(cur, userid)
+            if result.status:
+                # Successfully assigned one
+                SELF_MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
+            else:
+                SELF_MESSAGE += f"""\nBut we failed to assign a new mentor for you automatically. :("""
 
-    # Step 4 - Send notification to self
-    cur.execute(f"INSERT INTO {profileName}message VALUES(DEFAULT, %s, %s);", (profileId, SELF_MESSAGE))
+        # Step 4 - Send notification to self
+        cur.execute(f"INSERT INTO {profileName}message VALUES(DEFAULT, %s, %s);", (profileId, SELF_MESSAGE))
