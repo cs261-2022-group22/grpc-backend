@@ -8,8 +8,22 @@ ACCOUNT_BUSINESS_SECTOR_DOB_QUERY = """
 SELECT businessSectorId, dob FROM Account WHERE accountId = %s;
 """
 
+MENTOR_SKILLS_QUERY = """
+SELECT skillId 
+FROM Mentor 
+    NATURAL JOIN MentorSkill 
+WHERE Mentor.mentorId = %s;
+"""
 
-def getBusinessAreasAscendingAgeDifference(cur, mentorUserId, menteeUserId, mentorId, menteeId, rating):
+MENTEE_SKILLS_QUERY = """
+SELECT skillId 
+FROM Mentee 
+    NATURAL JOIN MenteeSkill 
+WHERE Mentee.menteeid = %s;
+"""
+
+
+def queueFeedbackForMl(cur, mentorUserId, menteeUserId, mentorId, menteeId, rating):
     """Get their business areas in ascending order (of id), their skill overlap 
     and their age difference. This is required by the ML system."""
 
@@ -20,15 +34,23 @@ def getBusinessAreasAscendingAgeDifference(cur, mentorUserId, menteeUserId, ment
     (menteeBaId, menteeDob) = cur.fetchone()
 
     #determine the age difference between the users
-    ageDifference = 0
+    #(this should be positive if the mentee is older)
+    ageDifference = round((menteeDob - mentorDob).days / 365)
 
     #extract the skills of the mentor and mentee
+    cur.execute(MENTOR_SKILLS_QUERY, (mentorId,))
+    mentorSkills = set(map(lambda e: e[0], cur.fetchall()))
+    cur.execute(MENTEE_SKILLS_QUERY, (menteeId,))
+    menteeSkills = set(map(lambda e: e[0], cur.fetchall()))
     #determine the skill overlap as a numerical amount
-    skillOverlap = 0
+    skillOverlap = len(mentorSkills & menteeSkills)
 
     #allocate the business areas in ascending order (of id)
+    (businessArea1Id, businessArea2Id) = sorted([mentorBaId, menteeBaId])
 
-    return sorted([mentorBaId, menteeBaId]) + [skillOverlap, ageDifference]
+    #queue the feedback for the ML system with the desired format
+    cur.execute("INSERT INTO PendingRatingFeedback VALUES(%s,%s,%s,%s,%s);", 
+    (businessArea1Id, businessArea2Id, skillOverlap, ageDifference, rating))
 
 
 def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
