@@ -194,26 +194,52 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
     success = False
 
     try:
+        # The profile type of current user
+        profileTypeStr = "mentee" if profile_type == ProfileType.MENTEE else "mentor"
+
+        otherProfileTypeStr = "mentor" if profile_type == ProfileType.MENTEE else "mentee"
+
+        # Assumed given user id is valid
+        cur.execute(f"SELECT {profileTypeStr}id FROM {profileTypeStr} WHERE accountid = %s;", (userid,))
+        profileId = cur.fetchone()[0]
+
         if new_email is not None:
             print(f" -> Updating email address for user {userid}")
             cur.execute("UPDATE account SET email = %s WHERE accountid = %s;", (new_email, userid))
 
-        if new_bs_id is not None:
-            print(f" -> Updating Business Area for user {userid}")
-            cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
-
         if skills is not None:
-            profileTypeStr = "mentee" if profile_type == ProfileType.MENTEE else "mentor"
-
-            # Assumed given user id is valid
-            cur.execute(f"SELECT {profileTypeStr}id FROM {profileTypeStr} WHERE accountid = %s;", (userid,))
-            profileId = cur.fetchone()[0]
-
             cur.execute(f"DELETE FROM {profileTypeStr}skill WHERE {profileTypeStr}id = %s;", (profileId,))
 
             print(f" -> Updating Skills for user {userid}")
             for newSkill in skills:
                 cur.execute(f"INSERT INTO {profileTypeStr}skill VALUES (DEFAULT, %s, %s);", (profileId, newSkill))
+
+        if new_bs_id is not None:
+            print(f" -> Updating Business Area for user {userid}")
+
+            # Step 1 - Check which of the assignments were affected
+            AFFECTED_ASSIGNMENTS = f"""
+SELECT assignmentid, {otherProfileTypeStr}.{otherProfileTypeStr}id, name FROM assignment
+    NATURAL JOIN {otherProfileTypeStr}
+    JOIN account on {otherProfileTypeStr}.accountid = account.accountid
+WHERE assignment.{profileTypeStr}id = %s    -- Current User's Profile ID
+  AND account.businesssectorid = %s;        -- Business Area ID to be changed to, use '=' to select conflicted
+"""
+            cur.execute(AFFECTED_ASSIGNMENTS, (profileId, new_bs_id))
+
+            for affected in cur.fetchall():
+                (assignmentId, affectedProfileId, affectedName) = affected
+                print(f"     -> Affected {otherProfileTypeStr}: {affectedName} (profile id: {affectedProfileId}), from assignment {assignmentId}")
+
+                # Step 2 - Remove such assignment
+                cur.execute("DELETE FROM assignment WHERE assignmentid = %s;", (assignmentId,))
+
+                # Step 3 - Send notifications to this user:
+                MESSAGE = f"""Hello {affectedName}, your {profileTypeStr} has changed their business area, as a result you have been unassigned with them."""
+                cur.execute(f"INSERT INTO {otherProfileTypeStr}message VALUES(DEFAULT, %s, %s);", (affectedProfileId, MESSAGE))
+
+            # Finally, update this
+            cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
 
         success = True
     except Exception as e:
