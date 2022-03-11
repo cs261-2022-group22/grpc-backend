@@ -1,7 +1,11 @@
 import random
 
+from psycopg import Connection, Cursor
+
 from compiled_protos.matching_package import MenteeToMentorMatchingReply
 from utils.connection_pool import ConnectionPool
+
+matchingServiceConnectionPool = ConnectionPool()
 
 MATCHED_MENTOR_QUERY = """
 SELECT Account.accountId, Account.name 
@@ -127,8 +131,8 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
         return (selectedMentorWithMetric[0], selectedMentorWithMetric[1])
 
 
-def getMatchingMentorImpl(connectionPool: ConnectionPool, menteeUserId: int) -> MenteeToMentorMatchingReply:
-    (conn, cur) = connectionPool.acquire_from_connection_pool()
+def getMatchingMentorImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
+    (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
 
     response = MenteeToMentorMatchingReply()
     response.status = False  # failure-biased
@@ -141,7 +145,7 @@ def getMatchingMentorImpl(connectionPool: ConnectionPool, menteeUserId: int) -> 
     cur.execute(MATCHED_MENTOR_QUERY, (menteeId,))
     matchedMentorDetails = cur.fetchone()
     if matchedMentorDetails is None:
-        connectionPool.release_to_connection_pool(conn, cur)
+        matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
         return response
 
     (mentor_user_id, mentor_name) = matchedMentorDetails
@@ -149,13 +153,18 @@ def getMatchingMentorImpl(connectionPool: ConnectionPool, menteeUserId: int) -> 
     response.mentor_name = mentor_name
     response.status = True
 
-    connectionPool.release_to_connection_pool(conn, cur)
+    matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
 
 
-def tryMatchImpl(connectionPool: ConnectionPool, menteeUserId: int) -> MenteeToMentorMatchingReply:
-    (conn, cur) = connectionPool.acquire_from_connection_pool()
+def tryMatchImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
+    (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
+    response = tryMatchImplImpl(conn, cur, menteeUserId)
+    matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
 
+
+def tryMatchImplImpl(cur: Cursor, menteeUserId: int) -> MenteeToMentorMatchingReply:
     response = MenteeToMentorMatchingReply()
     response.status = False  # failure-biased
 
@@ -168,26 +177,22 @@ def tryMatchImpl(connectionPool: ConnectionPool, menteeUserId: int) -> MenteeToM
     result = cur.fetchone()
     if result is None:
         print("Error: No such mentee:", menteeId)
-        connectionPool.release_to_connection_pool(conn, cur)
         return response
 
     (menteeDob, _, menteeBusinessAreaId, assignments_count) = result
 
     if assignments_count > 1:
         print("FATAL DATABASE ERROR: REQUIREMENT 'C3.2' BROKEN")
-        connectionPool.release_to_connection_pool(conn, cur)
         return response
 
     if assignments_count == 1:
-        print("Error: Trying to match mentor for one who has one mentor assigned already.")
-        connectionPool.release_to_connection_pool(conn, cur)
+        print("Error: Trying to match mentee for one who has one mentor assigned already.")
         return response
 
     # Step 2: Choose a mentor in a different one using the models.
     cur.execute(SELECT_MENTOR_BASED_ON_DIFFERENT_BUSINESS_SECTOR, (menteeBusinessAreaId,))
     mentors = cur.fetchall()
     if len(mentors) == 0:
-        connectionPool.release_to_connection_pool(conn, cur)
         return response
 
     (mentor_id, mentor_name) = selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
@@ -201,6 +206,4 @@ def tryMatchImpl(connectionPool: ConnectionPool, menteeUserId: int) -> MenteeToM
     response.status = True
 
     cur.execute("INSERT INTO Assignment(mentorId, menteeId) VALUES(%s, %s);", (mentor_id, menteeId))
-
-    connectionPool.release_to_connection_pool(conn, cur)
     return response
