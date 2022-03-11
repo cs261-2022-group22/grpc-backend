@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
     ListAppointmentsReply, ListPlansOfActionsReply, PlansOfAction, ProfileType,
-    TogglePlansOfActionCompletionReply)
+    ScheduleNewMeetingReply, TogglePlansOfActionCompletionReply)
 from utils.connection_pool import ConnectionPool
 
 meetingServiceConnectionPool = ConnectionPool()
@@ -107,3 +109,7 @@ def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> C
 
     meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return CreatePlansOfActionsReply(success, plansOfAction)
+
+
+def scheduleNewMeetingImpl(mentee_user_id: int, start: datetime, duration: int, link: str) -> ScheduleNewMeetingReply:
+    return ScheduleNewMeetingReply()
