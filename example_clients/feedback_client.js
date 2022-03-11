@@ -12,7 +12,7 @@ function main() {
 
     var client = new feedback_proto.FeedbackService(SERVER_ADDRESS, grpc.credentials.createInsecure());
 
-    client.AddFeedbackOnMentor({ mentorUserId: 9, menteeUserId: 28, rating: 3.8 },
+    client.AddFeedbackOnMentor({ mentorUserId: 58, menteeUserId: 1, rating: 3.8 },
         (err, response) => console.log("AddFeedbackOnMentor:", err ? "An error has occurred: " + err : response));
 }
 

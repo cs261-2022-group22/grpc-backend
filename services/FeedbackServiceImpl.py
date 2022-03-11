@@ -59,6 +59,9 @@ def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float)
     response = AddFeedbackReply()
     response.status = False #failure-biased
 
+    # Step 0: round rating to 1dp
+    rating = round(rating, 1)
+
     # Step 1: determine the mentor and mentee ids.
     #mentor id
     cur.execute("SELECT mentorId FROM Mentor WHERE accountId = %s;", (mentorUserId,))

@@ -8,7 +8,7 @@ from services.FeedbackServiceImpl import (feedbackServiceConnectionPool,
 
 
 class FeedbackService(FeedbackServiceBase):
-    async def add_feedback_on_mentor(mentor_user_id: int, mentee_user_id: int, rating: float) -> AddFeedbackReply:
+    async def add_feedback_on_mentor(self, mentor_user_id: int, mentee_user_id: int, rating: float) -> AddFeedbackReply:
         return await run_in_thread(addFeedbackOnMentorImpl, mentor_user_id, mentee_user_id, rating)
 
 
