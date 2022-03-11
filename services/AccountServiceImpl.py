@@ -197,7 +197,6 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
     try:
         # The profile type of current user
         profileTypeStr = "mentee" if profile_type == ProfileType.MENTEE else "mentor"
-
         otherProfileTypeStr = "mentor" if profile_type == ProfileType.MENTEE else "mentee"
 
         # Assumed given user id is valid
@@ -219,13 +218,13 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
             _updateBusinessAreaForUserProfile(cur, userid, profileId, profileTypeStr, otherProfileTypeStr, new_bs_id)
 
             # Check if the other profile (if any) is affected
-            cur.execute(f"SELECT {otherProfileTypeStr}id FROM {otherProfileTypeStr} WHERE accountid = %s", (userid,))
+            cur.execute(f"SELECT {otherProfileTypeStr}id FROM {otherProfileTypeStr} WHERE accountid = %s;", (userid,))
 
             result = cur.fetchone()
             if result is not None:
                 # Continue processing if this user has another profile.
                 otherProfileId = result[0]
-                # Please note two types are swapped                    |----- HERE ------|  |- AND HERE -|
+                # Please note two types are swapped                            |----- HERE ------|  |- AND HERE -|
                 _updateBusinessAreaForUserProfile(cur, userid, otherProfileId, otherProfileTypeStr, profileTypeStr, new_bs_id)
 
             # Finally, update the business area
@@ -288,5 +287,3 @@ AND account.businesssectorid = %s;      -- Business Area ID to be changed to, us
 
     # Step 4 - Send notification to self
     cur.execute(f"INSERT INTO {profileName}message VALUES(DEFAULT, %s, %s);", (profileId, SELF_MESSAGE))
-
-    pass
