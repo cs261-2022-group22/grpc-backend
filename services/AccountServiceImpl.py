@@ -266,7 +266,7 @@ AND account.businesssectorid = %s;      -- Business Area ID to be changed to, us
 
         # Step 3 - If we are the mentor, try reassigning these mentees
         if profileName == "mentor":
-            result = tryMatchImplImpl(accountServiceConnectionPool, affectedAccountId)
+            result = tryMatchImplImpl(cur, affectedAccountId)
             if result.status:
                 # Successfully assigned one
                 MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
