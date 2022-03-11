@@ -217,6 +217,9 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
                 cur.execute(f"INSERT INTO {profileTypeStr}skill VALUES (DEFAULT, %s, %s);", (profileId, newSkill))
 
         if new_bs_id is not None:
+            # Update the business area before doing any reassignment
+            cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
+
             _updateBusinessAreaForUserProfile(cur, userid, profileId, profileTypeStr, otherProfileTypeStr, new_bs_id)
 
             # Check if the other profile (if any) is affected
@@ -228,9 +231,6 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
                 otherProfileId = result[0]
                 # Please note two types are swapped                            |----- HERE ------|  |- AND HERE -|
                 _updateBusinessAreaForUserProfile(cur, userid, otherProfileId, otherProfileTypeStr, profileTypeStr, new_bs_id)
-
-            # Finally, update the business area
-            cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
 
         success = True
     except Exception as e:
