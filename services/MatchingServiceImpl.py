@@ -159,7 +159,7 @@ def getMatchingMentorImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
 
 def tryMatchImpl(menteeUserId: int) -> MenteeToMentorMatchingReply:
     (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
-    response = tryMatchImplImpl(conn, cur, menteeUserId)
+    response = tryMatchImplImpl(cur, cur, menteeUserId)
     matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
 

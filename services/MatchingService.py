@@ -10,10 +10,10 @@ from services.MatchingServiceImpl import (getMatchingMentorImpl,
 
 class MatchingService(MatchingServiceBase):
     async def try_match(self, mentee_user_id: int) -> MenteeToMentorMatchingReply:
-        return await run_in_thread(tryMatchImpl,  mentee_user_id)
+        return await run_in_thread(tryMatchImpl, mentee_user_id)
 
     async def get_matching_mentor(self, mentee_user_id: int) -> MenteeToMentorMatchingReply:
-        return await run_in_thread(getMatchingMentorImpl,   mentee_user_id)
+        return await run_in_thread(getMatchingMentorImpl, mentee_user_id)
 
 
 async def beginServe(connectionString: str, port: int):
