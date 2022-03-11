@@ -13,6 +13,7 @@ from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
                                              ProfileType, RegistrationReply,
                                              Skill,
                                              UpdateProfileDetailsResponse)
+from services.MatchingServiceImpl import tryMatchImpl
 from utils.connection_pool import ConnectionPool
 
 accountServiceConnectionPool = ConnectionPool()
@@ -215,30 +216,19 @@ def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: 
                 cur.execute(f"INSERT INTO {profileTypeStr}skill VALUES (DEFAULT, %s, %s);", (profileId, newSkill))
 
         if new_bs_id is not None:
-            print(f" -> Updating Business Area for user {userid}")
+            _updateBusinessAreaForUserProfile(cur, userid, profileId, profileTypeStr, otherProfileTypeStr, new_bs_id)
 
-            # Step 1 - Check which of the assignments were affected
-            AFFECTED_ASSIGNMENTS = f"""
-SELECT assignmentid, {otherProfileTypeStr}.{otherProfileTypeStr}id, name FROM assignment
-    NATURAL JOIN {otherProfileTypeStr}
-    JOIN account on {otherProfileTypeStr}.accountid = account.accountid
-WHERE assignment.{profileTypeStr}id = %s    -- Current User's Profile ID
-  AND account.businesssectorid = %s;        -- Business Area ID to be changed to, use '=' to select conflicted
-"""
-            cur.execute(AFFECTED_ASSIGNMENTS, (profileId, new_bs_id))
+            # Check if the other profile (if any) is affected
+            cur.execute(f"SELECT {otherProfileTypeStr}id FROM {otherProfileTypeStr} WHERE accountid = %s", (userid,))
 
-            for affected in cur.fetchall():
-                (assignmentId, affectedProfileId, affectedName) = affected
-                print(f"     -> Affected {otherProfileTypeStr}: {affectedName} (profile id: {affectedProfileId}), from assignment {assignmentId}")
+            result = cur.fetchone()
+            if result is not None:
+                # Continue processing if this user has another profile.
+                otherProfileId = result[0]
+                # Please note two types are swapped                    |----- HERE ------|  |- AND HERE -|
+                _updateBusinessAreaForUserProfile(cur, userid, otherProfileId, otherProfileTypeStr, profileTypeStr, new_bs_id)
 
-                # Step 2 - Remove such assignment
-                cur.execute("DELETE FROM assignment WHERE assignmentid = %s;", (assignmentId,))
-
-                # Step 3 - Send notifications to this user:
-                MESSAGE = f"""Hello {affectedName}, your {profileTypeStr} has changed their business area, as a result you have been unassigned with them."""
-                cur.execute(f"INSERT INTO {otherProfileTypeStr}message VALUES(DEFAULT, %s, %s);", (affectedProfileId, MESSAGE))
-
-            # Finally, update this
+            # Finally, update the business area
             cur.execute("UPDATE account SET businesssectorid = %s WHERE accountid = %s;", (new_bs_id, userid))
 
         success = True
@@ -248,3 +238,55 @@ WHERE assignment.{profileTypeStr}id = %s    -- Current User's Profile ID
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return UpdateProfileDetailsResponse(success)
+
+
+def _updateBusinessAreaForUserProfile(cur: psycopg.Cursor, userid: int, profileId: int, profileName: str, otherProfileName: str, newBsId: int):
+    print(f" -> Updating Business Area for {profileName} {profileId}")
+
+    # Step 1 - Check which of the assignments were affected
+    AFFECTED_ASSIGNMENTS = f"""
+SELECT assignmentid, {otherProfileName}.{otherProfileName}id, name, account.accountid FROM assignment
+NATURAL JOIN {otherProfileName}
+JOIN account on {otherProfileName}.accountid = account.accountid
+WHERE assignment.{profileName}id = %s   -- Current User's Profile ID
+AND account.businesssectorid = %s;      -- Business Area ID to be changed to, use '=' to select conflicted
+"""
+    cur.execute(AFFECTED_ASSIGNMENTS, (profileId, newBsId))
+
+    affectedProfiles = cur.fetchall()
+    for affected in affectedProfiles:
+        (assignmentId, affectedProfileId, affectedName, affectedAccountId) = affected
+        print(f"     -> Affected {otherProfileName}: {affectedName} (profile id: {affectedProfileId}), from assignment {assignmentId}")
+
+        # Step 2 - Remove such assignment
+        cur.execute("DELETE FROM assignment WHERE assignmentid = %s;", (assignmentId,))
+
+        MESSAGE = f"""Hello {affectedName}, your {profileName} has changed their business area, you have been unassigned with them."""
+
+        # Step 3 - If we are the mentor, try reassigning these mentees
+        if profileName == "mentor":
+            result = tryMatchImpl(accountServiceConnectionPool, affectedAccountId)
+            if result.status:
+                # Successfully assigned one
+                MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
+            else:
+                MESSAGE += f"""\nBut we failed to assign a new mentor for you automatically. :("""
+
+        # Step 3 - Send notifications to this user:
+        cur.execute(f"INSERT INTO {otherProfileName}message VALUES(DEFAULT, %s, %s);", (affectedProfileId, MESSAGE))
+
+    SELF_MESSAGE = f"""Hello, you have changed your business area, as a result, you have been unassigned with {len(affectedProfiles)} {otherProfileName}(s)."""
+
+    # If we are the mentee, try reassigning a new mentor
+    if profileName == "mentee":
+        result = tryMatchImpl(accountServiceConnectionPool, userid)
+        if result.status:
+            # Successfully assigned one
+            SELF_MESSAGE += f"""\nYou have been reassigned to a new mentor: {result.mentor_name}."""
+        else:
+            SELF_MESSAGE += f"""\nBut we failed to assign a new mentor for you automatically. :("""
+
+    # Step 4 - Send notification to self
+    cur.execute(f"INSERT INTO {profileName}message VALUES(DEFAULT, %s, %s);", (profileId, SELF_MESSAGE))
+
+    pass
