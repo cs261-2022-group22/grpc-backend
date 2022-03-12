@@ -29,7 +29,7 @@ function main() {
     exampleStartTime.fromDate(new Date());
 
     client.ScheduleNewMeeting({ menteeUserId: 1, start: exampleStartTime.toObject(), duration: 60, link: "https://meeting.example.com/" },
-        (err, response) => console.log("CreatePlansOfActions:", err ? "An error has occurred: " + err : response));
+        (err, response) => console.log("ScheduleNewMeeting:", err ? "An error has occurred: " + err : response));
 }
 
 main();
