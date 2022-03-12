@@ -3,7 +3,7 @@ from datetime import datetime
 from compiled_protos.meeting_package import (
     CreatePlansOfActionsReply, ListAppointmentsReply, ListPlansOfActionsReply,
     MeetingServiceBase, ProfileType, ScheduleNewMeetingReply,
-    TogglePlansOfActionCompletionReply, ScheduleNewWorkshopReply)
+    ScheduleNewWorkshopReply, TogglePlansOfActionCompletionReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
@@ -12,8 +12,8 @@ from services.MeetingServiceImpl import (createPlansOfActionsImpl,
                                          listPlansOfActionsImpl,
                                          meetingServiceConnectionPool,
                                          scheduleNewMeetingImpl,
-                                         togglePlansOfActionCompletionImpl, 
-                                         scheduleNewWorkshopImpl)
+                                         scheduleNewWorkshopImpl,
+                                         togglePlansOfActionCompletionImpl)
 
 gRPCServer: Server
 

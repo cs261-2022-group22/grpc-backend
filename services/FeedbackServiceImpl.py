@@ -9,15 +9,15 @@ SELECT businessSectorId, dob FROM Account WHERE accountId = %s;
 
 MENTOR_SKILLS_QUERY = """
 SELECT skillId 
-FROM Mentor 
+FROM Mentor
     NATURAL JOIN MentorSkill 
 WHERE Mentor.mentorId = %s;
 """
 
 MENTEE_SKILLS_QUERY = """
-SELECT skillId 
-FROM Mentee 
-    NATURAL JOIN MenteeSkill 
+SELECT skillId
+FROM Mentee
+    NATURAL JOIN MenteeSkill
 WHERE Mentee.menteeid = %s;
 """
 
@@ -56,7 +56,7 @@ def ratingFeedbackExists(cur, assignmentId: int, profileName: str):
     """ Check whether matching feedback exists for the specified profile in the 
     given assignment. """
     cur.execute(f"SELECT {profileName.lower()}FeedbackId FROM {profileName}Feedback WHERE assignmentId = %s;", (assignmentId,))
-    return cur.fetchone() is not None  #exists if there is some record for the desired feedback
+    return cur.fetchone() is not None  # exists if there is some record for the desired feedback
 
 
 def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
@@ -85,7 +85,7 @@ def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int
     assignmentId = cur.fetchone()[0]
 
     # CHECK: Only 1 piece of feedback on the profile permitted per matching
-    if ratingFeedbackExists(cur, assignmentId, profileName): # feedback already present so not allowed more
+    if ratingFeedbackExists(cur, assignmentId, profileName):  # feedback already present so not allowed more
         feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
         return response
 
@@ -107,9 +107,9 @@ def addDevFeedbackImpl(content: str):
     (conn, cur) = feedbackServiceConnectionPool.acquire_from_connection_pool()
 
     response = AddFeedbackReply()
-    response.status = True #should never fail
+    response.status = True  # should never fail
 
-    #create dev feedback
+    # create dev feedback
     cur.execute("INSERT INTO WebsiteFeedback(message) VALUES(%s);", (content,))
 
     feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)

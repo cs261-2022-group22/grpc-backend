@@ -1,8 +1,7 @@
 import random
 
-from psycopg import Connection, Cursor
-
 from compiled_protos.matching_package import MenteeToMentorMatchingReply
+from psycopg import Connection, Cursor
 from utils.connection_pool import ConnectionPool
 
 matchingServiceConnectionPool = ConnectionPool()
@@ -100,7 +99,7 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
     # create dict from the distinct mentor business areas to the models
     modelDict = {}
     for distinctMentorBusinessAreaId in distinctMentorBusinessAreaIds:
-        #models store the business area ids in ascending order so we must match this scheme.
+        # models store the business area ids in ascending order so we must match this scheme.
         businessArea1Id, businessArea2Id = sorted([menteeBusinessAreaId, distinctMentorBusinessAreaId])
         cur.execute(MODEL_QUERY, (businessArea1Id, businessArea2Id))
         if (model := cur.fetchone()) is not None:

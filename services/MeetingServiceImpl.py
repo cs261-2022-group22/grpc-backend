@@ -3,8 +3,8 @@ from datetime import datetime
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
     ListAppointmentsReply, ListPlansOfActionsReply, PlansOfAction, ProfileType,
-    ScheduleNewMeetingReply, TogglePlansOfActionCompletionReply, 
-    ScheduleNewWorkshopReply)
+    ScheduleNewMeetingReply, ScheduleNewWorkshopReply,
+    TogglePlansOfActionCompletionReply)
 from utils.connection_pool import ConnectionPool
 
 meetingServiceConnectionPool = ConnectionPool()
@@ -158,7 +158,7 @@ def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: st
     (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
 
     response = ScheduleNewWorkshopReply()
-    response.status = False #failure-biased
+    response.status = False  # failure-biased
 
     # Step 1: Determine the skillId
     cur.execute("SELECT skillId FROM Skill WHERE name = %s;", (skill,))
@@ -179,9 +179,9 @@ def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: st
     AND EndTime > CheckStartTime;
     """
     cur.execute(WORKSHOP_COLLISION_QUERY, (start, start, duration, skillId))
-    if cur.fetchone() is None: #can add it if there are no collisions
+    if cur.fetchone() is None:  # can add it if there are no collisions
         cur.execute("INSERT INTO Workshop(skillId, link, start, duration) VALUES(%s,%s,%s,%s);", (skillId, link, start, duration))
-        response.status = True #success
-    
+        response.status = True  # success
+
     meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response

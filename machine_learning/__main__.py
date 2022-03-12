@@ -3,7 +3,6 @@ from sys import argv
 from machine_learning.process_pending_rating import ProcessPendingRating
 from machine_learning.update_models import UpdateModels
 
-
 ALL_FUNCTIONS = dict([
     ("UpdateModels", UpdateModels),
     ("ProcessPendingRating", ProcessPendingRating),

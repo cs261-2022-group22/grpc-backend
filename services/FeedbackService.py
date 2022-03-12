@@ -1,12 +1,13 @@
 from cProfile import run
+
 from compiled_protos.feedback_package import (AddFeedbackReply,
                                               FeedbackServiceBase)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
-from services.FeedbackServiceImpl import (addRatingFeedbackImpl,
-                                          feedbackServiceConnectionPool, 
-                                          addDevFeedbackImpl)
+from services.FeedbackServiceImpl import (addDevFeedbackImpl,
+                                          addRatingFeedbackImpl,
+                                          feedbackServiceConnectionPool)
 
 
 class FeedbackService(FeedbackServiceBase):

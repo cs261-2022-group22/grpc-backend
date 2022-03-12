@@ -1,8 +1,8 @@
 import os
 
 import psycopg
-
 from utils import GetConnectionString
+
 from . import DataDirectory
 
 conn = psycopg.connect(GetConnectionString())
