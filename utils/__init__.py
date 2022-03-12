@@ -24,6 +24,6 @@ def InitService(port_env_name: str):
         print("Invalid port number:", port)
         exit(1)
 
-    listenAddress = int(os.getenv(port_env_name + "_SERVICE_ADDRESS") or "127.0.0.1")
+    listenAddress = os.getenv(port_env_name + "_SERVICE_ADDRESS") or "127.0.0.1"
     ConnectionString = GetConnectionString()
     return port, ConnectionString, listenAddress
