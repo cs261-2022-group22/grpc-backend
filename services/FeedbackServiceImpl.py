@@ -104,4 +104,13 @@ def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int
 
 
 def addDevFeedback(content: str):
-    return AddFeedbackReply()
+    (conn, cur) = feedbackServiceConnectionPool.acquire_from_connection_pool()
+
+    response = AddFeedbackReply()
+    response.status = True #should never fail
+
+    #create dev feedback
+    cur.execute("INSERT INTO WebsiteFeedback(message) VALUES(%s);", (content,))
+
+    feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
