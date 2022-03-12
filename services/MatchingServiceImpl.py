@@ -100,7 +100,9 @@ def selectOptimalMentor(menteeId, menteeDob, menteeBusinessAreaId, mentors, cur)
     # create dict from the distinct mentor business areas to the models
     modelDict = {}
     for distinctMentorBusinessAreaId in distinctMentorBusinessAreaIds:
-        cur.execute(MODEL_QUERY, (menteeBusinessAreaId, distinctMentorBusinessAreaId))
+        #models store the business area ids in ascending order so we must match this scheme.
+        businessArea1Id, businessArea2Id = sorted([menteeBusinessAreaId, distinctMentorBusinessAreaId])
+        cur.execute(MODEL_QUERY, (businessArea1Id, businessArea2Id))
         if (model := cur.fetchone()) is not None:
             modelDict[distinctMentorBusinessAreaId] = model
 
