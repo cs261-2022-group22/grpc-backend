@@ -30,6 +30,9 @@ function main() {
 
     client.ScheduleNewMeeting({ menteeUserId: 1, start: exampleStartTime.toObject(), duration: 60, link: "https://meeting.example.com/" },
         (err, response) => console.log("ScheduleNewMeeting:", err ? "An error has occurred: " + err : response));
+
+    client.ScheduleNewWorkshop({ start: exampleStartTime.toObject(), duration: 45, link: "https://meeting.example.com/", skill: "Management" },
+        (err, response) => console.log("ScheduleNewWorkshop:", err ? "An error has occurred: " + err : response));
 }
 
 main();
