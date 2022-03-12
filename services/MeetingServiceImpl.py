@@ -3,7 +3,8 @@ from datetime import datetime
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
     ListAppointmentsReply, ListPlansOfActionsReply, PlansOfAction, ProfileType,
-    ScheduleNewMeetingReply, TogglePlansOfActionCompletionReply)
+    ScheduleNewMeetingReply, TogglePlansOfActionCompletionReply, 
+    ScheduleNewWorkshopReply)
 from utils.connection_pool import ConnectionPool
 
 meetingServiceConnectionPool = ConnectionPool()
@@ -151,3 +152,7 @@ WHERE CheckEndTime > StartTime
 
     meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return ScheduleNewMeetingReply(success)
+
+
+def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: str) -> ScheduleNewWorkshopReply:
+    return ScheduleNewWorkshopReply()

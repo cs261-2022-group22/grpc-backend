@@ -3,7 +3,7 @@ from datetime import datetime
 from compiled_protos.meeting_package import (
     CreatePlansOfActionsReply, ListAppointmentsReply, ListPlansOfActionsReply,
     MeetingServiceBase, ProfileType, ScheduleNewMeetingReply,
-    TogglePlansOfActionCompletionReply)
+    TogglePlansOfActionCompletionReply, ScheduleNewWorkshopReply)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
@@ -12,7 +12,8 @@ from services.MeetingServiceImpl import (createPlansOfActionsImpl,
                                          listPlansOfActionsImpl,
                                          meetingServiceConnectionPool,
                                          scheduleNewMeetingImpl,
-                                         togglePlansOfActionCompletionImpl)
+                                         togglePlansOfActionCompletionImpl, 
+                                         scheduleNewWorkshopImpl)
 
 gRPCServer: Server
 
@@ -32,6 +33,9 @@ class MeetingService(MeetingServiceBase):
 
     async def schedule_new_meeting(self, mentee_user_id: int, start: datetime, duration: int, link: str) -> ScheduleNewMeetingReply:
         return await run_in_thread(scheduleNewMeetingImpl, mentee_user_id, start, duration, link)
+
+    async def schedule_new_workshop(self, start: datetime, duration: int, link: str, skill: str) -> ScheduleNewWorkshopReply:
+        return await run_in_thread(scheduleNewWorkshopImpl, start, duration, link, skill)
 
 
 async def beginServe(connectionString: str, port: int):
