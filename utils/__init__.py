@@ -15,15 +15,15 @@ def GetConnectionString():
     return f'dbname={DBName} user={DBUser} password={DBPassword} host={DBHost} port={DBPort}'
 
 
-def InitService(port_env_name: str):
+def InitService(service_name: str):
     load_dotenv()
     logging.basicConfig()
 
-    port = int(os.getenv(port_env_name + "_SERVICE_PORT") or 50051)
+    port = int(os.getenv(service_name + "_SERVICE_PORT") or 50051)
     if port < 1 or port > 65535:
         print("Invalid port number:", port)
         exit(1)
 
-    listenAddress = os.getenv(port_env_name + "_SERVICE_ADDRESS") or "127.0.0.1"
+    listenAddress = os.getenv(service_name + "_SERVICE_ADDRESS") or "127.0.0.1"
     ConnectionString = GetConnectionString()
     return port, ConnectionString, listenAddress
