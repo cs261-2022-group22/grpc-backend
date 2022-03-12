@@ -116,13 +116,13 @@ def scheduleNewMeetingImpl(mentee_user_id: int, start: datetime, duration: int, 
     # Step 1: Get mentee, mentor IDs
 
     QUERY = """
-SELECT assignmentid, mentee.menteeid, mentorid FROM assignment
+SELECT assignmentid FROM assignment
     JOIN mentee ON assignment.menteeid = mentee.menteeid
 WHERE mentee.accountid = %s;
 """
     cur.execute(QUERY, (mentee_user_id,))
 
-    (assignmentId, menteeId, mentorId) = cur.fetchone()
+    assignmentId = cur.fetchone()[0]
 
     # Step 2: Check possible collision, check for either the mentor or mentee is busy at this time
     DETECT_COLLISION_QUERY = """
@@ -137,13 +137,13 @@ WITH Data AS (
         menteeid
     FROM meeting
     NATURAL JOIN assignment
-    WHERE assignmentid = %s OR mentorid = %s OR menteeid = %s
+    WHERE assignmentid = %s
 ) SELECT * FROM Data
 WHERE (StartTime > CheckStartTime AND StartTime < CheckEndTime)
    OR (EndTime   > CheckStartTime AND EndTime   < CheckEndtime)
 """
 
-    cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId, mentorId, menteeId))
+    cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId))
 
     success = False
     if len(cur.fetchall()) == 0:
