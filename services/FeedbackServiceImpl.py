@@ -103,7 +103,7 @@ def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int
     return response
 
 
-def addDevFeedback(content: str):
+def addDevFeedbackImpl(content: str):
     (conn, cur) = feedbackServiceConnectionPool.acquire_from_connection_pool()
 
     response = AddFeedbackReply()
