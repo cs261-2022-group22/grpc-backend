@@ -23,6 +23,9 @@ function main() {
 
     client.CreatePlansOfActions({ menteeUserId: 1, plansOfAction: "Created by JS demo client." },
         (err, response) => console.log("CreatePlansOfActions:", err ? "An error has occurred: " + err : response));
+
+    client.ScheduleNewMeeting({ menteeUserId: 1, start: new Date(), duration: 60, link: "https://meeting.example.com/" },
+        (err, response) => console.log("CreatePlansOfActions:", err ? "An error has occurred: " + err : response));
 }
 
 main();

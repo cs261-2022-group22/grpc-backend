@@ -112,4 +112,44 @@ def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> C
 
 
 def scheduleNewMeetingImpl(mentee_user_id: int, start: datetime, duration: int, link: str) -> ScheduleNewMeetingReply:
-    return ScheduleNewMeetingReply()
+    (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
+    # Step 1: Get mentee, mentor IDs
+
+    QUERY = """
+SELECT assignmentid, mentee.menteeid, mentorid FROM assignment
+    JOIN mentee ON assignment.menteeid = mentee.menteeid
+WHERE mentee.accountid = %s;
+"""
+    cur.execute(QUERY, (mentee_user_id,))
+
+    (assignmentId, menteeId, mentorId) = cur.fetchone()
+
+    # Step 2: Check possible collision, check for either the mentor or mentee is busy at this time
+    DETECT_COLLISION_QUERY = """
+WITH Data AS (
+    SELECT
+        (start) AS StartTime,
+        (start + ((duration || ' minutes')::interval)) AS EndTime,
+        (%s) AS CheckStartTime,
+        (%s + ((%s || ' minutes')::interval)) AS CheckEndtime,
+        assignmentid,
+        mentorid,
+        menteeid
+    FROM meeting
+    NATURAL JOIN assignment
+    WHERE assignmentid = %s OR mentorid = %s OR menteeid = %s
+) SELECT * FROM Data
+WHERE (StartTime > CheckStartTime AND StartTime < CheckEndTime)
+   OR (EndTime   > CheckStartTime AND EndTime   < CheckEndtime)
+"""
+
+    cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId, mentorId, menteeId))
+
+    success = False
+    if len(cur.fetchall()) == 0:
+        # Step 3: Insert into the meeting table
+        cur.execute("INSERT INTO meeting VALUES(DEFAULT, %s, %s, %s, %s)", (assignmentId, link, start, duration))
+        success = True
+
+    meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return ScheduleNewMeetingReply(success)
