@@ -1,4 +1,3 @@
-from compiled_protos.account_package import BusinessArea
 from compiled_protos.feedback_package import AddFeedbackReply
 from utils.connection_pool import ConnectionPool
 
@@ -53,7 +52,17 @@ def queueFeedbackForMl(cur, mentorUserId, menteeUserId, mentorId, menteeId, rati
                 (businessArea1Id, businessArea2Id, skillOverlap, ageDifference, rating))
 
 
-def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
+def ratingFeedbackExists(cur, assignmentId: int, profileName: str):
+    """ Check whether matching feedback exists for the specified profile in the 
+    given assignment. """
+    cur.execute(f"SELECT {profileName.lower()}FeedbackId FROM {profileName}Feedback WHERE assignmentId = %s;", (assignmentId,))
+    return cur.fetchone() is not None  #exists if there is some record for the desired feedback
+
+
+def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
+    """ Derives the assignment from the mentor and mentee user ids given. Adds rating feedback 
+    on the profile specified. Also queues the feedback to be added to the ML system after 
+    computing the required metrics. """
     (conn, cur) = feedbackServiceConnectionPool.acquire_from_connection_pool()
 
     response = AddFeedbackReply()
@@ -75,14 +84,13 @@ def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float)
                 (mentorId, menteeId))
     assignmentId = cur.fetchone()[0]
 
-    # CHECK: Only 1 piece of feedback on the mentor permitted per matching
-    cur.execute("SELECT mentorFeedbackId FROM MentorFeedback WHERE assignmentId = %s;", (assignmentId,))
-    if cur.fetchone() is not None:  # feedback already present so not allowed more
+    # CHECK: Only 1 piece of feedback on the profile permitted per matching
+    if ratingFeedbackExists(cur, assignmentId, profileName): # feedback already present so not allowed more
         feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
         return response
 
     # Step 3: add the feedback to the main system.
-    cur.execute("INSERT INTO MentorFeedback(assignmentId, rating) VALUES(%s,%s);",
+    cur.execute(f"INSERT INTO {profileName}Feedback(assignmentId, rating) VALUES(%s,%s);",
                 (assignmentId, rating))
 
     # Step 4: queue the feedback to be added to the machine learning system so
