@@ -137,8 +137,8 @@ WITH Data AS (
     NATURAL JOIN assignment
     WHERE assignmentid = %s
 ) SELECT * FROM Data
-WHERE (StartTime >= CheckStartTime AND (NOT StartTime > CheckEndTime))
-   OR (EndTime   >= CheckStartTime AND (NOT EndTime   > CheckEndTime))
+WHERE CheckEndTime > StartTime
+  AND EndTime      > CheckStartTime
 """
 
     cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId))
