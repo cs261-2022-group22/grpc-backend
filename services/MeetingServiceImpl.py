@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib import response
 
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
@@ -155,4 +156,33 @@ WHERE CheckEndTime > StartTime
 
 
 def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: str) -> ScheduleNewWorkshopReply:
-    return ScheduleNewWorkshopReply()
+    (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
+
+    response = ScheduleNewWorkshopReply()
+    response.status = False #failure-biased
+
+    # Step 1: Determine the skillId
+    cur.execute("SELECT skillId FROM Skill WHERE name = %s;", (skill,))
+    skillId = cur.fetchone()[0]
+
+    # Step 2: Detect collisions with workshops of the same skill
+    WORKSHOP_COLLISION_QUERY = """
+    WITH WorkshopCollision AS (
+        SELECT
+            (start) AS StartTime,
+            (start + ((duration || ' minutes')::interval)) AS EndTime,
+            (%s) AS CheckStartTime,
+            (%s + ((%s || ' minutes')::interval)) AS CheckEndTime
+        FROM Workshop 
+        WHERE skillId = %s
+    ) SELECT * FROM WorkshopCollision
+    WHERE CheckEndTime > StartTime
+    AND EndTime > CheckStartTime;
+    """
+    cur.execute(WORKSHOP_COLLISION_QUERY, (start, start, duration, skillId))
+    if cur.fetchone() is None: #can add it if there are no collisions
+        cur.execute("INSERT INTO Workshop(skillId, link, start, duration) VALUES(%s,%s,%s,%s);", (skillId, link, start, duration))
+        response.status = True #success
+    
+    meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
