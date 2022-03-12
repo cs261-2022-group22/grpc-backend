@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
     ListAppointmentsReply, ListPlansOfActionsReply, PlansOfAction, ProfileType,
-    TogglePlansOfActionCompletionReply)
+    ScheduleNewMeetingReply, TogglePlansOfActionCompletionReply)
 from utils.connection_pool import ConnectionPool
 
 meetingServiceConnectionPool = ConnectionPool()
@@ -107,3 +109,45 @@ def createPlansOfActionsImpl(mentee_user_id: int, plansOfActionString: str) -> C
 
     meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
     return CreatePlansOfActionsReply(success, plansOfAction)
+
+
+def scheduleNewMeetingImpl(mentee_user_id: int, start: datetime, duration: int, link: str) -> ScheduleNewMeetingReply:
+    (conn, cur) = meetingServiceConnectionPool.acquire_from_connection_pool()
+    # Step 1: Get mentee, mentor IDs
+
+    QUERY = """
+SELECT assignmentid FROM assignment
+    JOIN mentee ON assignment.menteeid = mentee.menteeid
+WHERE mentee.accountid = %s;
+"""
+    cur.execute(QUERY, (mentee_user_id,))
+
+    assignmentId = cur.fetchone()[0]
+
+    # Step 2: Check possible collision, check if this assignment is busy at this time
+    DETECT_COLLISION_QUERY = """
+WITH Data AS (
+    SELECT
+        (start) AS StartTime,
+        (start + ((duration || ' minutes')::interval)) AS EndTime,
+        (%s) AS CheckStartTime,
+        (%s + ((%s || ' minutes')::interval)) AS CheckEndTime,
+        assignmentid
+    FROM meeting
+    NATURAL JOIN assignment
+    WHERE assignmentid = %s
+) SELECT * FROM Data
+WHERE CheckEndTime > StartTime
+  AND EndTime      > CheckStartTime
+"""
+
+    cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId))
+
+    success = False
+    if len(cur.fetchall()) == 0:
+        # Step 3: Insert into the meeting table
+        cur.execute("INSERT INTO meeting VALUES(DEFAULT, %s, %s, %s, %s)", (assignmentId, link, start, duration))
+        success = True
+
+    meetingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return ScheduleNewMeetingReply(success)
