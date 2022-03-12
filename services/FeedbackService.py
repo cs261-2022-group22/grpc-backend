@@ -1,10 +1,12 @@
+from cProfile import run
 from compiled_protos.feedback_package import (AddFeedbackReply,
                                               FeedbackServiceBase)
 from grpclib.server import Server
 from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
 from services.FeedbackServiceImpl import (addRatingFeedbackImpl,
-                                          feedbackServiceConnectionPool)
+                                          feedbackServiceConnectionPool, 
+                                          addDevFeedbackImpl)
 
 
 class FeedbackService(FeedbackServiceBase):
@@ -13,6 +15,9 @@ class FeedbackService(FeedbackServiceBase):
 
     async def add_feedback_on_mentee(self, mentor_user_id: int, mentee_user_id: int, rating: float) -> AddFeedbackReply:
         return await run_in_thread(addRatingFeedbackImpl, "Mentee", mentor_user_id, mentee_user_id, rating)
+
+    async def add_dev_feedback(self, content: str) -> AddFeedbackReply:
+        return await run_in_thread(addDevFeedbackImpl, content)
 
 
 async def beginServe(connectionString: str, port: int, listenAddress: str):

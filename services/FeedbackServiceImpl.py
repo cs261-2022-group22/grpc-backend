@@ -101,3 +101,7 @@ def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int
     response.status = True
     feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
+
+
+def addDevFeedback(content: str):
+    return AddFeedbackReply()
