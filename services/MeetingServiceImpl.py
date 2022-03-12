@@ -124,7 +124,7 @@ WHERE mentee.accountid = %s;
 
     assignmentId = cur.fetchone()[0]
 
-    # Step 2: Check possible collision, check for either the mentor or mentee is busy at this time
+    # Step 2: Check possible collision, check if this assignment is busy at this time
     DETECT_COLLISION_QUERY = """
 WITH Data AS (
     SELECT
