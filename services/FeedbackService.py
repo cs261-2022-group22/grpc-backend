@@ -15,13 +15,13 @@ class FeedbackService(FeedbackServiceBase):
         return await run_in_thread(addRatingFeedbackImpl, "Mentee", mentor_user_id, mentee_user_id, rating)
 
 
-async def beginServe(connectionString: str, port: int):
+async def beginServe(connectionString: str, port: int, listenAddress: str):
     feedbackServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([FeedbackService()])
-    await gRPCServer.start("127.0.0.1", port)
-    print("Feedback Service Server started. Listening on port:", port)
+    await gRPCServer.start(listenAddress, port)
+    print(f"Feedback Service Server started. Listening on {listenAddress}:{port}")
     await gRPCServer.wait_closed()
 
 

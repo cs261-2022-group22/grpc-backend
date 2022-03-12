@@ -57,13 +57,13 @@ class AccountService(AccountServiceBase):
         return await run_in_thread(updateProfileDetailsImpl, userid, profile_type, new_email, new_bs_id, skills)
 
 
-async def beginServe(connectionString: str, port: int):
+async def beginServe(connectionString: str, port: int, listenAddress: str):
     accountServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([AccountService()])
-    await gRPCServer.start("127.0.0.1", port)
-    print("Account Service Server started. Listening on port:", port)
+    await gRPCServer.start(listenAddress, port)
+    print(f"Account Service Server started. Listening on {listenAddress}:{port}")
     await gRPCServer.wait_closed()
 
 
