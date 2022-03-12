@@ -16,13 +16,13 @@ class MatchingService(MatchingServiceBase):
         return await run_in_thread(getMatchingMentorImpl, mentee_user_id)
 
 
-async def beginServe(connectionString: str, port: int):
+async def beginServe(connectionString: str, port: int, listenAddress: str):
     matchingServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([MatchingService()])
-    await gRPCServer.start("127.0.0.1", port)
-    print("Matching Service Server started. Listening on port:", port)
+    await gRPCServer.start(listenAddress, port)
+    print(f"Matching Service Server started. Listening on {listenAddress}:{port}")
     await gRPCServer.wait_closed()
 
 

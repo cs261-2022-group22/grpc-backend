@@ -38,13 +38,13 @@ class MeetingService(MeetingServiceBase):
         return await run_in_thread(scheduleNewWorkshopImpl, start, duration, link, skill)
 
 
-async def beginServe(connectionString: str, port: int):
+async def beginServe(connectionString: str, port: int, listenAddress: str):
     meetingServiceConnectionPool.initialise_connection_pool(connectionString)
 
     global gRPCServer
     gRPCServer = Server([MeetingService()])
-    await gRPCServer.start("127.0.0.1", port)
-    print("Meeting Service Server started. Listening on port:", port)
+    await gRPCServer.start(listenAddress, port)
+    print(f"Meeting Service Server started. Listening on {listenAddress}:{port}")
     await gRPCServer.wait_closed()
 
 
