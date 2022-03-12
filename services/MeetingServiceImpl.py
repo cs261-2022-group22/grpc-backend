@@ -132,15 +132,13 @@ WITH Data AS (
         (start + ((duration || ' minutes')::interval)) AS EndTime,
         (%s) AS CheckStartTime,
         (%s + ((%s || ' minutes')::interval)) AS CheckEndtime,
-        assignmentid,
-        mentorid,
-        menteeid
+        assignmentid
     FROM meeting
     NATURAL JOIN assignment
     WHERE assignmentid = %s
 ) SELECT * FROM Data
-WHERE (StartTime > CheckStartTime AND StartTime < CheckEndTime)
-   OR (EndTime   > CheckStartTime AND EndTime   < CheckEndtime)
+WHERE (StartTime >= CheckStartTime AND (NOT StartTime > CheckEndTime))
+   OR (EndTime   >= CheckStartTime AND (NOT EndTime   > CheckEndtime))
 """
 
     cur.execute(DETECT_COLLISION_QUERY, (start, start, duration, assignmentId))
