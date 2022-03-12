@@ -26,12 +26,12 @@ function main() {
         (err, response) => console.log("CreatePlansOfActions:", err ? "An error has occurred: " + err : response));
 
     var exampleStartTime = new google_protobuf_timestamp.Timestamp();
-    exampleStartTime.fromDate(new Date());
+    exampleStartTime.fromDate(new Date(2022, 03, 14, 15));
 
     client.ScheduleNewMeeting({ menteeUserId: 1, start: exampleStartTime.toObject(), duration: 60, link: "https://meeting.example.com/" },
         (err, response) => console.log("ScheduleNewMeeting:", err ? "An error has occurred: " + err : response));
 
-    client.ScheduleNewWorkshop({ start: exampleStartTime.toObject(), duration: 45, link: "https://meeting.example.com/", skill: "Management" },
+    client.ScheduleNewWorkshop({ start: exampleStartTime.toObject(), duration: 45, link: "https://workshop.example.com/", skill: "Management" },
         (err, response) => console.log("ScheduleNewWorkshop:", err ? "An error has occurred: " + err : response));
 }
 
