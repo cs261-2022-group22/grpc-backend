@@ -46,7 +46,7 @@ def SuggestWorkshop():
     SELECT menteeId FROM Mentee o WHERE 
         NOT EXISTS (
             SELECT * FROM Assignment 
-            WHERE Assignment.mentorId = o.mentorId
+            WHERE Assignment.menteeId = o.menteeId
         );
     """
     cur.execute(UNMATCHED_MENTEE_QUERY)
