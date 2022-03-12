@@ -14,6 +14,9 @@ function main() {
 
     client.AddFeedbackOnMentor({ mentorUserId: 58, menteeUserId: 1, rating: 3.8 },
         (err, response) => console.log("AddFeedbackOnMentor:", err ? "An error has occurred: " + err : response));
+    
+    client.AddFeedbackOnMentee({ mentorUserId: 58, menteeUserId: 1, rating: 3.9 },
+        (err, response) => console.log("AddFeedbackOnMentee:", err ? "An error has occurred: " + err : response));
 }
 
 main();

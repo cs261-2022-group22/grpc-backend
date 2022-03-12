@@ -1,4 +1,3 @@
-from compiled_protos.account_package import BusinessArea
 from compiled_protos.feedback_package import AddFeedbackReply
 from utils.connection_pool import ConnectionPool
 
@@ -93,3 +92,7 @@ def addFeedbackOnMentorImpl(mentorUserId: int, menteeUserId: int, rating: float)
     response.status = True
     feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
+
+
+def addFeedbackOnMenteeImpl(mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
+    return AddFeedbackReply()
