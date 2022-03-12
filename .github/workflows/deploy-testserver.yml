@@ -20,7 +20,11 @@ jobs:
           pip --version
 
       - name: Stop test server
-        run: sudo systemctl stop cs261-api-server@account.service
+        run: |
+          sudo systemctl stop cs261-api-server@account.service
+          sudo systemctl stop cs261-api-server@meeting.service
+          sudo systemctl stop cs261-api-server@matching.service
+          sudo systemctl stop cs261-api-server@feedback.service
 
       - name: Deploy to test server
         run: |
@@ -34,4 +38,8 @@ jobs:
           python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto
 
       - name: Start test server
-        run: sudo systemctl start cs261-api-server@account.service
+        run: |
+          sudo systemctl start cs261-api-server@account.service
+          sudo systemctl start cs261-api-server@meeting.service
+          sudo systemctl start cs261-api-server@matching.service
+          sudo systemctl start cs261-api-server@feedback.service
