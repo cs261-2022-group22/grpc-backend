@@ -7,7 +7,7 @@ def extractSingleField(givenResultSet):
     #Extracts the single field out of each record in a 
     # result set (list of tuples). Hence produces a list 
     # of field values.
-    return map(lambda e: e[0], givenResultSet)
+    return list(map(lambda e: e[0], givenResultSet))
 
 
 def adviseWorkshopSkill(cur, skillId, skillName):
@@ -80,7 +80,7 @@ def SuggestWorkshop():
     # Step 3: Determine skills that exceed threshold of subscription from 
     # unmatched mentees. Advise workshops for these skills to applicable mentors.
     for skillId, count in skillCount.items():
-        if count >= 20:
+        if count >= 10:
             adviseWorkshopSkill(cur, skillId, skillNameMapping[skillId])
 
     conn.commit()
