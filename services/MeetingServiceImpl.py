@@ -1,5 +1,4 @@
 from datetime import datetime
-from urllib import response
 
 from compiled_protos.meeting_package import (
     Appointment, AppointmentType, CreatePlansOfActionsReply,
