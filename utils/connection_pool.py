@@ -9,12 +9,14 @@ from threading import Lock
 
 import psycopg
 
+from utils import CONCURRENCY_SIZE
+
 
 class ConnectionPool:
     def __init__(self) -> None:
         self.connMutex = Lock()  # to prevent race conditions
         self.connCurList: list[tuple[psycopg.Connection, psycopg.Cursor]] = []  # does not get manipulated - another version of the collection below
-        self.connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=16)  # connections to database and corresponding cursors
+        self.connCurQueue: Queue[tuple[psycopg.Connection, psycopg.Cursor]] = Queue(maxsize=CONCURRENCY_SIZE)  # connections to database and corresponding cursors
 
     def acquire_from_connection_pool(self) -> tuple[psycopg.Connection, psycopg.Cursor]:
         funcName = inspect.currentframe().f_back.f_code.co_name
@@ -33,7 +35,7 @@ class ConnectionPool:
 
     def initialise_connection_pool(self, connectionString: str) -> None:
         # create a connection and corresponding cursor for each thread
-        for _ in range(16):
+        for _ in range(CONCURRENCY_SIZE):
             # connect to database
             conn: psycopg.Connection = psycopg.connect(connectionString)
             cur: psycopg.Cursor = conn.cursor()
@@ -41,7 +43,7 @@ class ConnectionPool:
             self.connCurList.append((conn, cur))
 
     def shutdown_connection_pool(self) -> None:
-        for i in range(16):
+        for i in range(CONCURRENCY_SIZE):
             (conn, cur) = self.connCurList[i]
             cur.close()
             conn.close()

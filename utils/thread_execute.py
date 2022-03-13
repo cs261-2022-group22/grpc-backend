@@ -1,8 +1,10 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
+from utils import CONCURRENCY_SIZE
+
 # TODO: Allocate executor for each services
-executor = ThreadPoolExecutor(16, 'worker_')
+executor = ThreadPoolExecutor(CONCURRENCY_SIZE, 'worker_')
 
 
 def shutdown_thread_pool():
