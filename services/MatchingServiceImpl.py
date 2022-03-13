@@ -1,6 +1,7 @@
 import random
 
-from compiled_protos.matching_package import MenteeToMentorMatchingReply
+from compiled_protos.matching_package import (GetMenteesReply, Mentee,
+                                              MenteeToMentorMatchingReply)
 from psycopg import Connection, Cursor
 from utils.connection_pool import ConnectionPool
 
@@ -208,3 +209,23 @@ def tryMatchImplImpl(cur: Cursor, menteeUserId: int) -> MenteeToMentorMatchingRe
 
     cur.execute("INSERT INTO Assignment(mentorId, menteeId) VALUES(%s, %s);", (mentor_id, menteeId))
     return response
+
+
+def getMenteesByMentorIdImpl(mentor_user_id: int) -> GetMenteesReply:
+    (conn, cur) = matchingServiceConnectionPool.acquire_from_connection_pool()
+
+    QUERY_STRING = """
+WITH mentorIdResult AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
+SELECT mentee.accountid, name FROM assignment
+    NATURAL INNER JOIN mentorIdResult
+    JOIN mentee on assignment.menteeid = mentee.menteeid
+    JOIN account a on mentee.accountid = a.accountid;
+"""
+    cur.execute(QUERY_STRING, (mentor_user_id,))
+
+    response = []
+    for result in cur.fetchall():
+        response.append(Mentee(result[0], result[1]))
+
+    matchingServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return GetMenteesReply(response)

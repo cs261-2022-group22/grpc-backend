@@ -1,4 +1,3 @@
-import string
 from datetime import datetime
 from logging import error
 from typing import List, Optional
@@ -6,9 +5,8 @@ from typing import List, Optional
 import bcrypt
 import psycopg
 from compiled_protos.account_package import (AuthenticateReply, BusinessArea,
-                                             GetMenteesReply,
                                              ListBusinessAreasReply,
-                                             ListSkillsReply, Mentee,
+                                             ListSkillsReply,
                                              NotificationsReply,
                                              ProfileSignupReply, ProfilesReply,
                                              ProfileType, RegistrationReply,
@@ -167,26 +165,6 @@ def registerProfileImpl(userid: int, desiredSkills: list[str], profileTableName:
 
     accountServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
-
-
-def getMenteesByMentorIdImpl(mentor_user_id: int) -> GetMenteesReply:
-    (conn, cur) = accountServiceConnectionPool.acquire_from_connection_pool()
-
-    QUERY_STRING = """
-WITH mentorIdResult AS (SELECT mentorid FROM mentor NATURAL JOIN account WHERE accountid = %s)
-SELECT mentee.accountid, name FROM assignment
-    NATURAL INNER JOIN mentorIdResult
-    JOIN mentee on assignment.menteeid = mentee.menteeid
-    JOIN account a on mentee.accountid = a.accountid;
-"""
-    cur.execute(QUERY_STRING, (mentor_user_id,))
-
-    response = []
-    for result in cur.fetchall():
-        response.append(Mentee(result[0], result[1]))
-
-    accountServiceConnectionPool.release_to_connection_pool(conn, cur)
-    return GetMenteesReply(response)
 
 
 def updateProfileDetailsImpl(userid: int, profile_type: ProfileType, new_email: Optional[str], new_bs_id: Optional[int], skills: Optional[List[int]]) -> UpdateProfileDetailsResponse:
