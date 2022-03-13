@@ -59,6 +59,26 @@ def ratingFeedbackExists(cur, assignmentId: int, profileName: str):
     return cur.fetchone() is not None  # exists if there is some record for the desired feedback
 
 
+def getProfilesAssignment(cur, mentorUserId, menteeUserId):
+    """ From the given mentor and mentee user id, retrieves the profile ids 
+    (mentor id and mentee id) and the assignment id. Assumes that the given 
+    mentor and mentee are matched. """
+
+    # mentor id
+    cur.execute("SELECT mentorId FROM Mentor WHERE accountId = %s;", (mentorUserId,))
+    mentorId = cur.fetchone()[0]
+    # mentee id
+    cur.execute("SELECT menteeId FROM Mentee WHERE accountId = %s;", (menteeUserId,))
+    menteeId = cur.fetchone()[0]
+
+    # assignment id
+    cur.execute("SELECT assignmentId FROM Assignment WHERE mentorId = %s AND menteeId = %s;",
+                (mentorId, menteeId))
+    assignmentId = cur.fetchone()[0]
+
+    return (mentorId, menteeId, assignmentId)
+
+
 def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int, rating: float) -> AddFeedbackReply:
     """ Derives the assignment from the mentor and mentee user ids given. Adds rating feedback 
     on the profile specified. Also queues the feedback to be added to the ML system after 
@@ -72,17 +92,8 @@ def addRatingFeedbackImpl(profileName: str, mentorUserId: int, menteeUserId: int
     rating = round(rating, 1)
 
     # Step 1: determine the mentor and mentee ids.
-    # mentor id
-    cur.execute("SELECT mentorId FROM Mentor WHERE accountId = %s;", (mentorUserId,))
-    mentorId = cur.fetchone()[0]
-    # mentee id
-    cur.execute("SELECT menteeId FROM Mentee WHERE accountId = %s;", (menteeUserId,))
-    menteeId = cur.fetchone()[0]
-
     # Step 2: determine the assignment.
-    cur.execute("SELECT assignmentId FROM Assignment WHERE mentorId = %s AND menteeId = %s;",
-                (mentorId, menteeId))
-    assignmentId = cur.fetchone()[0]
+    mentorId, menteeId, assignmentId = getProfilesAssignment(cur, mentorUserId, menteeUserId)
 
     # CHECK: Only 1 piece of feedback on the profile permitted per matching
     if ratingFeedbackExists(cur, assignmentId, profileName):  # feedback already present so not allowed more
@@ -111,6 +122,23 @@ def addDevFeedbackImpl(content: str):
 
     # create dev feedback
     cur.execute("INSERT INTO WebsiteFeedback(message) VALUES(%s);", (content,))
+
+    feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
+    return response
+
+
+def addProgFeedbackImpl(mentorUserId, menteeUserId, content):
+    (conn, cur) = feedbackServiceConnectionPool.acquire_from_connection_pool()
+
+    response = AddFeedbackReply()
+    response.status = False  #failure-biased
+
+    # Step 1: determine the assignment
+    _, _, assignmentId = getProfilesAssignment(cur, mentorUserId, menteeUserId)
+
+    # Step 2: create the progress feedback
+    cur.execute("INSERT INTO DevelopmentFeedback(assignmentId, content) VALUES(%s,%s);", (assignmentId, content))
+    response.status = True #operation complete
 
     feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response

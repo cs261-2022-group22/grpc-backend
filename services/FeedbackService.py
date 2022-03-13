@@ -7,7 +7,8 @@ from utils.thread_execute import run_in_thread, shutdown_thread_pool
 
 from services.FeedbackServiceImpl import (addDevFeedbackImpl,
                                           addRatingFeedbackImpl,
-                                          feedbackServiceConnectionPool)
+                                          feedbackServiceConnectionPool, 
+                                          addProgFeedbackImpl)
 
 
 class FeedbackService(FeedbackServiceBase):
@@ -19,6 +20,9 @@ class FeedbackService(FeedbackServiceBase):
 
     async def add_dev_feedback(self, content: str) -> AddFeedbackReply:
         return await run_in_thread(addDevFeedbackImpl, content)
+
+    async def add_prog_feedback(self, mentor_user_id: int, mentee_user_id: int, content: float) -> AddFeedbackReply:
+        return await run_in_thread(addProgFeedbackImpl, mentor_user_id, mentee_user_id, content)
 
 
 async def beginServe(connectionString: str, port: int, listenAddress: str):

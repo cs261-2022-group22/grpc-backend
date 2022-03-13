@@ -20,6 +20,9 @@ function main() {
 
     client.AddDevFeedback({ content: "This is an example of developer feedback. Added by the example feedback client." },
         (err, response) => console.log("AddDevFeedback:", err ? "An error has occurred: " + err : response));
+
+    client.AddProgFeedback({ mentorUserId: 58, menteeUserId: 1, content: "This is an example of progress feedback. Added by the example feedback client." },
+        (err, response) => console.log("AddProgFeedback:", err ? "An error has occurred: " + err : response));
 }
 
 main();
