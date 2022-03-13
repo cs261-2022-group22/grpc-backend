@@ -136,12 +136,6 @@ def addProgFeedbackImpl(mentorUserId, menteeUserId, content):
     # Step 1: determine the assignment
     _, _, assignmentId = getProfilesAssignment(cur, mentorUserId, menteeUserId)
 
-    # CHECK: Only 1 piece of progress feedback is permitted per matching
-    cur.execute("SELECT * FROM DevelopmentFeedback WHERE assignmentId = %s;", (assignmentId,))
-    if cur.fetchone() is not None: #already exists - not allowed more
-        feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
-        return response
-
     # Step 2: create the progress feedback
     cur.execute("INSERT INTO DevelopmentFeedback(assignmentId, content) VALUES(%s,%s);", (assignmentId, content))
     response.status = True #operation complete
