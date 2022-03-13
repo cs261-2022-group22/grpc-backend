@@ -114,3 +114,7 @@ def addDevFeedbackImpl(content: str):
 
     feedbackServiceConnectionPool.release_to_connection_pool(conn, cur)
     return response
+
+
+def addProgFeedbackImpl(mentorUserId, menteeUserId, content):
+    return AddFeedbackReply()
