@@ -1,15 +1,18 @@
 import asyncio
-from grpclib.client import Channel
-import compiled_protos.matching_package as MatchingPackage
-from compiled_protos.matching_package import MenteeToMentorMatchingReply
-import compiled_protos.account_package as AccountPackage
-import unittest
 import datetime
 import random
 import string
-import psycopg
-from psycopg import Error
+import unittest
+
 import bcrypt
+import psycopg
+from grpclib.client import Channel
+from psycopg import Error
+
+import compiled_protos.account_package as AccountPackage
+import compiled_protos.matching_package as MatchingPackage
+from compiled_protos.matching_package import MenteeToMentorMatchingReply
+
 
 class TestSelectOptimalMentor(unittest.TestCase):
     def test_selection_failure_c3point2(self):
@@ -38,14 +41,15 @@ class TestSelectOptimalMentor(unittest.TestCase):
     #     self.assertFalse(response.status, "Testing selection invalid mentee user id, Expected: response.status = False")
 
     def test_selection_success(self):
-        randomstring = ''.join(random.choices(string.ascii_lowercase + string.digits, k = 10))
+        randomstring = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
         print(randomstring)
         randomemail = randomstring + "@gmail.com"
         print(randomemail)
 
         passwordHash = bcrypt.hashpw("password".encode('utf-8'), bcrypt.gensalt())
 
-        cursor.execute("INSERT INTO Account (name, email, passwordHash, dob, businessSectorId) VALUES (%s,%s,%s,%s,%s) RETURNING accountId",("Test", randomemail, passwordHash, datetime.datetime(2001,2,1), 2))
+        cursor.execute("INSERT INTO Account (name, email, passwordHash, dob, businessSectorId) VALUES (%s,%s,%s,%s,%s) RETURNING accountId",
+                       ("Test", randomemail, passwordHash, datetime.datetime(2001, 2, 1), 2))
         userid = cursor.fetchone()[0]
         print(userid)
         connection.commit()
@@ -66,12 +70,13 @@ class TestSelectOptimalMentor(unittest.TestCase):
         print(response)
         self.assertNotEqual(menteeBusinessId, mentorBusinessId, "Testing valid pairing, Expected; Mentor and mentee should have different business areas")
 
+
 class TestGetMatchingMentor(unittest.TestCase):
     def get_matching_mentor_success(self):
         response = loop.run_until_complete(service.get_matching_mentor(mentee_user_id=1))
 
         print(response)
-        self.assertEqual(response.mentor_user_id, 43,"Testing get matching mentor function, Expected: response.mentee_user_id = 43")
+        self.assertEqual(response.mentor_user_id, 43, "Testing get matching mentor function, Expected: response.mentee_user_id = 43")
         # self.assertFalse(response.status, "Testing selection invalid mentee user id, Expected: response.status = False")
 
     # def get_matching_mentor_failure(self):
@@ -79,6 +84,7 @@ class TestGetMatchingMentor(unittest.TestCase):
 
     #     print(response)
     #     self.assertFalse(response.status,"Testing get matching mentor function failure, Expected: user_id = 74, response.status = False")
+
 
 # Tests runs on same channel connections
 channel = Channel(host="127.0.0.1", port=50051)
@@ -94,9 +100,9 @@ try:
 except (Exception, Error) as error:
     print("Error connecting to database", error)
 
-if __name__  == '__main__':
+if __name__ == '__main__':
     unittest.main()
-    
+
 channel.close()
 cursor.close()
 connection.close()

@@ -57,7 +57,7 @@ jobs:
           echo "Starting test server..."
           python matching_server.py &
           sleep 30
-          python ./testing/matching_server_test.py
+          python ./testing/matching_service_test.py
           kill -9 %%
 
       - name: Lint with flake8
