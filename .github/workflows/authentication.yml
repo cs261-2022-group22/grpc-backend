@@ -38,6 +38,11 @@ jobs:
           
       - name: Testing matching and account services
         run: |
+          source ./venv/bin/activate
+
+          # Regenerate protos into the testing folder
+          python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./testing/compiled_protos/ ./common/*.proto
+
           export POSTGRES_HOST=20.77.8.229
           export POSTGRES_PORT=5432
           export POSTGRES_USER=cs261
