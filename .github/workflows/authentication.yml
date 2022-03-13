@@ -51,16 +51,13 @@ jobs:
           echo "Starting test server..."
           python account_server.py &
           sleep 10
-
-          cd testing
-          python account_service_test.py
+          python ./testing/account_service_test.py
           kill -9 %%
 
-          cd ..
+          echo "Starting test server..."
           python matching_server.py &
-          sleep 5
-          cd testing
-          python matching_server_test.py
+          sleep 10
+          python ./testing/matching_server_test.py
           kill -9 %%
 
       - name: Lint with flake8
