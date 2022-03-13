@@ -14,9 +14,13 @@ function main() {
 
     client.GetMatchingMentor({ menteeUserId: 72 },
         (err, response) => console.log("GetMatchingMentor:", err ? "An error has occurred: " + err : response));
-    
-    client.TryMatch({ menteeUserId: 1 }, 
+
+    client.TryMatch({ menteeUserId: 1 },
         (err, response) => console.log("TryMatch:", err ? "An error has occurred: " + err : response));
+
+    client.GetMenteesByMentorId({ mentorUserId: 43 },
+        (err, response) => console.log("GetMenteesByMentorId:", err ? "An error has occurred" : response));
+
 }
 
 main();

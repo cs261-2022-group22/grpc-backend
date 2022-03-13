@@ -76,9 +76,6 @@ function main() {
     client.RegisterMentee({ userid: 14, desiredSkills: ["How To Progress Career", "Leadership"] },
         (err, response) => console.log("RegisterMentee:", err ? "An error has occurred" : response));
 
-    client.GetMenteesByMentorId({ mentorUserId: 43 },
-        (err, response) => console.log("GetMenteesByMentorId:", err ? "An error has occurred" : response));
-
     client.RegisterMentor({ userid: 1, desiredSkills: ["Technical", "Management"] },
         (err, response) => console.log("RegisterMentor:", err ? "An error has occurred" : response));
 
