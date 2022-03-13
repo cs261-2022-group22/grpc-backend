@@ -50,13 +50,13 @@ jobs:
 
           echo "Starting test server..."
           python account_server.py &
-          sleep 20
+          sleep 40
           python ./testing/account_service_test.py
           kill -9 %%
 
           echo "Starting test server..."
           python matching_server.py &
-          sleep 20
+          sleep 40
           python ./testing/matching_server_test.py
           kill -9 %%
 
