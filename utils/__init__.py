@@ -3,6 +3,8 @@ import os
 
 from dotenv import load_dotenv
 
+CONCURRENCY_SIZE = 16
+
 
 def GetConnectionString():
     load_dotenv()
