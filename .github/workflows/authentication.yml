@@ -5,17 +5,16 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
 
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -36,8 +35,32 @@ jobs:
           pip install -r ./requirements.txt
           python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto
 
+      - name: Testing matching and account services
+        run: |
+          source ./venv/bin/activate
+
+          # Regenerate protos into the testing folder
+          python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./testing/compiled_protos/ ./common/*.proto
+
+          export POSTGRES_HOST=20.77.8.229
+          export POSTGRES_PORT=5432
+          export POSTGRES_USER=cs261
+          export POSTGRES_PASSWORD=cs261-group22
+          export POSTGRES_DATABASE=mentoring
+
+          echo "Starting test server..."
+          python account_server.py &
+          sleep 30
+          python ./testing/account_service_test.py
+          kill -9 %%
+
+          echo "Starting test server..."
+          python matching_server.py &
+          sleep 30
+          python ./testing/matching_server_test.py
+          kill -9 %%
+
       - name: Lint with flake8
         run: |
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude "venv/,compiled_protos/"
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=150 --statistics --exclude "venv/,compiled_protos/"
-
