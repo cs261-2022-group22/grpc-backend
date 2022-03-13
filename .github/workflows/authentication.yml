@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10"]
 
     steps:
       - uses: actions/checkout@v2
@@ -50,13 +50,13 @@ jobs:
 
           echo "Starting test server..."
           python account_server.py &
-          sleep 40
+          sleep 30
           python ./testing/account_service_test.py
           kill -9 %%
 
           echo "Starting test server..."
           python matching_server.py &
-          sleep 40
+          sleep 30
           python ./testing/matching_server_test.py
           kill -9 %%
 
