@@ -5,7 +5,6 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -35,7 +34,7 @@ jobs:
           source ./venv/bin/activate
           pip install -r ./requirements.txt
           python -m grpc_tools.protoc -I./common/ --python_betterproto_out=./compiled_protos/ ./common/*.proto
-          
+
       - name: Testing matching and account services
         run: |
           source ./venv/bin/activate
@@ -48,13 +47,15 @@ jobs:
           export POSTGRES_USER=cs261
           export POSTGRES_PASSWORD=cs261-group22
           export POSTGRES_DATABASE=mentoring
-          
+
+          echo "Starting test server..."
           python account_server.py &
-          sleep 5
+          sleep 10
+
           cd testing
           python account_service_test.py
           kill -9 %%
-          
+
           cd ..
           python matching_server.py &
           sleep 5
@@ -66,4 +67,3 @@ jobs:
         run: |
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude "venv/,compiled_protos/"
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=150 --statistics --exclude "venv/,compiled_protos/"
-
