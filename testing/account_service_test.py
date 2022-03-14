@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import profile
 import random
 import string
 import unittest
@@ -161,7 +162,7 @@ class TestNotifications(unittest.TestCase):  # Ask about this test
 
         cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
         mentorid = cursor.fetchone()[0]
-        print("MENTEE ID: ",mentorid)
+        print("MENTOR ID: ",mentorid)
 
         cursor.execute("INSERT INTO MentorMessage (mentorId, message) VALUES (%s, %s)", (mentorid, 'This is a test massage'))
         connection.commit()
@@ -211,6 +212,285 @@ class TestRegisterRoles(unittest.TestCase):
         response3 = loop.run_until_complete(service.account_profiles(userid=uid))
         print("test_register_mentee response3: ",response3)
         self.assertTrue(response3.is_mentee, "Testing mentee registration, Expected: response3.is_mentee = True")
+
+class TestUpdateProfile(unittest.TestCase):
+    def test_update_user(self):
+        # Original email
+        randomstring1 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring1)
+        randomemail1 = randomstring1 + "@gmail.com"
+        print(randomemail1)
+
+        # Updated email
+        randomstring2 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring2)
+        randomemail2 = randomstring2 + "@gmail.com"
+        print(randomemail2)
+
+        # Generate a new mentor/mentee
+        response1 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail1, password="password", business_area_id=1))
+        uid = response1.account_id
+        print("test_update_user response1: ",response1)
+
+        response2 = loop.run_until_complete(service.register_mentor(userid=uid, desired_skills=[]))
+        print("test_update_user response2: ",response2)
+
+        cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
+        mentorid = cursor.fetchone()[0]
+        print("MENTOR ID: ",mentorid)
+
+        response3 = loop.run_until_complete(service.register_mentee(userid=uid, desired_skills=[]))
+        print("test_update_user response3: ",response3)
+
+        # Updating mentor details
+        response4 = loop.run_until_complete(service.update_profile_details(userid=uid,profile_type=1,new_email=randomemail2,new_bs_id=2,skills=[1,2]))
+        print("test_update_user response4: ", response4)
+
+        # Status test
+        self.assertTrue(response4.success, "Testing update_profile_details, Expected: response4.success = True")
+
+        # Testing email update
+        cursor.execute("SELECT email FROM Account WHERE accountId = %s", (uid,))
+        newemail = cursor.fetchone()[0]
+        self.assertEqual(newemail,randomemail2,"Testing email change, Expected: newemail = randomemail2")
+
+        # Testing skill update
+        cursor.execute("SELECT skillId FROM MentorSkill WHERE mentorId = %s", (mentorid,))
+        skills = cursor.fetchall()
+        print(skills)
+        self.assertEqual(skills[0][0],1,"Testing skill update 1, Expected: skills[0] = 1")
+        self.assertEqual(skills[1][0],2,"Testing skill update 2, Expected: skills[1] = 2")
+
+        # Testing business id update
+        cursor.execute("SELECT businessSectorId FROM Account WHERE accountId = %s", (uid,))
+        newbusinessid = cursor.fetchone()[0]
+        self.assertEqual(newbusinessid,2,"Testing business area update, Expected: newbusinessid = 2")
+
+    def test_update_user_no_conflict_mentor(self):
+        # Original email
+        randomstring1 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring1)
+        randomemail1 = randomstring1 + "@gmail.com"
+        print(randomemail1)
+
+        # Email for to-be assigned
+        randomstring3 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring3)
+        randomemail3 = randomstring3 + "@gmail.com"
+        print(randomemail3)
+
+        # Generate a new mentor
+        response1 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail1, password="password", business_area_id=1))
+        uid = response1.account_id
+        print("test_update_user_assignment_conflict_mentor response1: ",response1)
+
+        response2 = loop.run_until_complete(service.register_mentor(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response2: ",response2)
+
+        cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
+        mentorid = cursor.fetchone()[0]
+        print("MENTOR ID: ",mentorid)
+
+        response3 = loop.run_until_complete(service.register_mentee(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response3: ",response3)
+
+        # Generate a new mentee to be assigned
+        response5 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail3, password="password", business_area_id=3))
+        uid2 = response5.account_id
+        print("test_update_user_assignment_conflict_mentor response5: ",response5)
+
+        response6 = loop.run_until_complete(service.register_mentee(userid=uid2, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response6: ",response6)
+
+        cursor.execute("SELECT menteeId FROM Mentee WHERE accountId = %s", (uid2,))
+        menteeid = cursor.fetchone()[0]
+        print("MENTEE ID: ",menteeid)
+
+        # Assigning mentor to mentee
+        cursor.execute("INSERT INTO Assignment (mentorId, menteeId) VALUES (%s,%s)", (mentorid,menteeid))
+        connection.commit()
+
+        # Updating mentor details
+        response4 = loop.run_until_complete(service.update_profile_details(userid=uid,profile_type=1,new_bs_id=2))
+        print("test_update_user_assignment_conflict_mentor response4: ", response4)
+
+        # Status test
+        self.assertTrue(response4.success, "Testing update_profile_details, Expected: response4.success = True")
+
+        # Should be a conflict, should replace mentor for mentee
+        cursor.execute("SELECT mentorId FROM Assignment WHERE menteeId = %s", (menteeid,))
+        newmentorid = cursor.fetchone()[0]
+        self.assertEqual(newmentorid,mentorid,"Testing for reassignment after a conflicting business area update, Expected: newmenteeid != menteeid")
+
+
+    def test_update_user_conflict_mentor(self):
+        # Original email
+        randomstring1 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring1)
+        randomemail1 = randomstring1 + "@gmail.com"
+        print(randomemail1)
+
+        # Email for to-be assigned
+        randomstring3 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring3)
+        randomemail3 = randomstring3 + "@gmail.com"
+        print(randomemail3)
+
+        # Generate a new mentor
+        response1 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail1, password="password", business_area_id=1))
+        uid = response1.account_id
+        print("test_update_user_assignment_conflict_mentor response1: ",response1)
+
+        response2 = loop.run_until_complete(service.register_mentor(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response2: ",response2)
+
+        cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
+        mentorid = cursor.fetchone()[0]
+        print("MENTOR ID: ",mentorid)
+
+        response3 = loop.run_until_complete(service.register_mentee(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response3: ",response3)
+
+        # Generate a new mentee to be assigned
+        response5 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail3, password="password", business_area_id=2))
+        uid2 = response5.account_id
+        print("test_update_user_assignment_conflict_mentor response5: ",response5)
+
+        response6 = loop.run_until_complete(service.register_mentee(userid=uid2, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response6: ",response6)
+
+        cursor.execute("SELECT menteeId FROM Mentee WHERE accountId = %s", (uid2,))
+        menteeid = cursor.fetchone()[0]
+        print("MENTEE ID: ",menteeid)
+
+        # Assigning mentor to mentee
+        cursor.execute("INSERT INTO Assignment (mentorId, menteeId) VALUES (%s,%s)", (mentorid,menteeid))
+        connection.commit()
+
+        # Updating mentor details
+        response4 = loop.run_until_complete(service.update_profile_details(userid=uid,profile_type=1,new_bs_id=2))
+        print("test_update_user_assignment_conflict_mentor response4: ", response4)
+
+        # Status test
+        self.assertTrue(response4.success, "Testing update_profile_details, Expected: response4.success = True")
+
+        # Should be a conflict, should replace mentor for mentee
+        cursor.execute("SELECT mentorId FROM Assignment WHERE menteeId = %s", (menteeid,))
+        newmentorid = cursor.fetchone()[0]
+        self.assertNotEqual(newmentorid,mentorid,"Testing for reassignment after a conflicting business area update, Expected: newmenteeid != menteeid")
+
+    def test_update_user_no_conflict_mentee(self):
+        # Original email
+        randomstring1 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring1)
+        randomemail1 = randomstring1 + "@gmail.com"
+        print(randomemail1)
+
+        # Email for to-be assigned
+        randomstring3 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring3)
+        randomemail3 = randomstring3 + "@gmail.com"
+        print(randomemail3)
+
+        # Generate a new mentor
+        response1 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail1, password="password", business_area_id=3))
+        uid = response1.account_id
+        print("test_update_user_assignment_conflict_mentor response1: ",response1)
+
+        response2 = loop.run_until_complete(service.register_mentor(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response2: ",response2)
+
+        cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
+        mentorid = cursor.fetchone()[0]
+        print("MENTOR ID: ",mentorid)
+
+        response3 = loop.run_until_complete(service.register_mentee(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response3: ",response3)
+
+        # Generate a new mentee to be assigned
+        response5 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail3, password="password", business_area_id=1))
+        uid2 = response5.account_id
+        print("test_update_user_assignment_conflict_mentor response5: ",response5)
+
+        response6 = loop.run_until_complete(service.register_mentee(userid=uid2, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response6: ",response6)
+
+        cursor.execute("SELECT menteeId FROM Mentee WHERE accountId = %s", (uid2,))
+        menteeid = cursor.fetchone()[0]
+        print("MENTEE ID: ",menteeid)
+
+        # Assigning mentor to mentee
+        cursor.execute("INSERT INTO Assignment (mentorId, menteeId) VALUES (%s,%s)", (mentorid,menteeid))
+        connection.commit()
+
+        # Updating mentee details
+        response4 = loop.run_until_complete(service.update_profile_details(userid=uid2,profile_type=0,new_bs_id=2))
+        print("test_update_user_assignment_conflict_mentor response4: ", response4)
+
+        # Status test
+        self.assertTrue(response4.success, "Testing update_profile_details, Expected: response4.success = True")
+
+        # No conflict
+        cursor.execute("SELECT mentorId FROM Assignment WHERE menteeId = %s", (menteeid,))
+        newmentorid = cursor.fetchone()[0]
+        self.assertEqual(newmentorid,mentorid,"Testing for reassignment after a conflicting business area update, Expected: newmenteeid != menteeid")
+
+    def test_update_user_conflict_mentee(self):
+        # Original email
+        randomstring1 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring1)
+        randomemail1 = randomstring1 + "@gmail.com"
+        print(randomemail1)
+
+        # Email for to-be assigned
+        randomstring3 = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+        print(randomstring3)
+        randomemail3 = randomstring3 + "@gmail.com"
+        print(randomemail3)
+
+        # Generate a new mentor
+        response1 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail1, password="password", business_area_id=2))
+        uid = response1.account_id
+        print("test_update_user_assignment_conflict_mentor response1: ",response1)
+
+        response2 = loop.run_until_complete(service.register_mentor(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response2: ",response2)
+
+        cursor.execute("SELECT mentorId FROM Mentor WHERE accountId = %s", (uid,))
+        mentorid = cursor.fetchone()[0]
+        print("MENTOR ID: ",mentorid)
+
+        response3 = loop.run_until_complete(service.register_mentee(userid=uid, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response3: ",response3)
+
+        # Generate a new mentee to be assigned
+        response5 = loop.run_until_complete(service.register_user(name="testname", date_of_birth=datetime.datetime(2001, 2, 1), email=randomemail3, password="password", business_area_id=1))
+        uid2 = response5.account_id
+        print("test_update_user_assignment_conflict_mentor response5: ",response5)
+
+        response6 = loop.run_until_complete(service.register_mentee(userid=uid2, desired_skills=[]))
+        print("test_update_user_assignment_conflict_mentor response6: ",response6)
+
+        cursor.execute("SELECT menteeId FROM Mentee WHERE accountId = %s", (uid2,))
+        menteeid = cursor.fetchone()[0]
+        print("MENTEE ID: ",menteeid)
+
+        # Assigning mentor to mentee
+        cursor.execute("INSERT INTO Assignment (mentorId, menteeId) VALUES (%s,%s)", (mentorid,menteeid))
+        connection.commit()
+
+        # Updating mentee details
+        response4 = loop.run_until_complete(service.update_profile_details(userid=uid2,profile_type=0,new_bs_id=2))
+        print("test_update_user_assignment_conflict_mentor response4: ", response4)
+
+        # Status test
+        self.assertTrue(response4.success, "Testing update_profile_details, Expected: response4.success = True")
+
+        # Should be a conflict, should replace mentor for mentee
+        cursor.execute("SELECT mentorId FROM Assignment WHERE menteeId = %s", (menteeid,))
+        newmentorid = cursor.fetchone()[0]
+        self.assertNotEqual(newmentorid,mentorid,"Testing for reassignment after a conflicting business area update, Expected: newmenteeid != menteeid")
+
 
 
 # Tests runs on same channel connections
