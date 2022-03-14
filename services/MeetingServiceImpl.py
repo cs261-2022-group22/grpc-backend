@@ -199,8 +199,36 @@ WHERE CheckEndTime > StartTime
     return ScheduleNewMeetingReply(success)
 
 
-def idk():
-    pass
+def extractSingleField(givenResultSet):
+    # Extracts the single field out of each record in a
+    # result set (list of tuples). Hence produces a list
+    # of field values.
+    return list(map(lambda e: e[0], givenResultSet))
+
+
+def notifyWorkshop(cur, profileTypeName, skillId, notificationMessage):
+    """ Notify profiles of the given type with the notification message if 
+    they are interested in a workshop of a given skill. They would be interested 
+    if they desire or teach that skill. """
+
+    profileTypeIdName = f"{profileTypeName.lower()}Id"
+
+    # identify profiles of the given type that are interested
+    INTERESTED_PROFILES = f"""
+    SELECT {profileTypeIdName} 
+    FROM {profileTypeName} o 
+    WHERE EXISTS (
+        SELECT * 
+        FROM {profileTypeName}Skill 
+        WHERE skillId = %s AND {profileTypeIdName} = o.{profileTypeIdName}
+    );
+    """
+    cur.execute(INTERESTED_PROFILES, (skillId,))
+    interestedProfileIds = extractSingleField(cur.fetchall())
+
+    #notify them
+    for profileId in interestedProfileIds:
+        cur.execute(f"INSERT INTO {profileTypeName}Message({profileTypeIdName},message) VALUES(%s,%s);", (profileId,notificationMessage))
 
 
 def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: str) -> ScheduleNewWorkshopReply:
@@ -232,6 +260,9 @@ def scheduleNewWorkshopImpl(start: datetime, duration: int, link: str, skill: st
         cur.execute("INSERT INTO Workshop(skillId, link, start, duration) VALUES(%s,%s,%s,%s);", (skillId, link, start, duration))
 
         #notify all interested profiles - mentees/mentors that desire/teach the target skill
+        WORKSHOP_NOTIFICATION = f"A workshop on {skill} has been scheduled from {start} for a duration of {duration} minutes." 
+        notifyWorkshop(cur, "Mentor", skillId, WORKSHOP_NOTIFICATION)
+        notifyWorkshop(cur, "Mentee", skillId, WORKSHOP_NOTIFICATION)
 
         response.status = True  # done the operation
 
