@@ -7,6 +7,6 @@
     "async": "^1.5.2",
     "google-protobuf": "^3.19.4",
     "lodash": "^4.17.21",
-    "minimist": "^1.2.5"
+    "minimist": "^1.2.6"
   }
 }
